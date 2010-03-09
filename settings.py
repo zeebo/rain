@@ -42,8 +42,9 @@ USE_I18N = True
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/amedia/'
 
+CURRENT_DOMAIN = 'localhost:8080' #zeeb.us.to
 MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media/')
-MEDIA_URL = 'media/'
+MEDIA_URL = 'http://%s/tracker/media/' % CURRENT_DOMAIN
 
 # Make this unique, and don't share it with anybody.
 # List of callables that know how to import templates from various sources.
