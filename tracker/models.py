@@ -37,3 +37,14 @@ class Torrent(models.Model):
 
 class TorrentAdmin(admin.ModelAdmin):
   list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers')
+
+class Peer(models.Model):
+  torrent = models.ForeignKey(Torrent)
+  peer_id = models.CharField(max_length=20)
+  port = models.IntegerField()
+  ip = models.IPAddressField()
+  key = models.CharField(max_length=100) #spec does not specify data type on key
+  state = models.CharField()
+  supportcrypto = models.BooleanField(default=True) #currently unused
+  
+  last_announce = models.DateTimeField(auto_now=True)
