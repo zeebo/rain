@@ -11,7 +11,7 @@ def bencode(data):
   if isinstance(data, list):
     return "l%se" % ''.join(bencode(x) for x in data)
   if isinstance(data, dict):
-    return "d%se" % ''.join('%s%s' % (bencode(x), bencode(data[x])) for x in data)
+    return "d%se" % ''.join('%s%s' % (bencode(x), bencode(data[x])) for x in sorted(data.keys()))
   
   raise TypeError
 
@@ -87,6 +87,9 @@ class TestBencode(unittest.TestCase):
     self.assertEqual(bencode({'cow':'moo', 'spam':'eggs'}), 'd3:cow3:moo4:spam4:eggse')
     self.assertEqual(bencode({'spam':['a', 'b']}), 'd4:spaml1:a1:bee')
     self.assertEqual(bencode({"publisher":"bob", "publisher-webpage":"www.example.com", "publisher.location":"home" }), 'd9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee')
+    
+  def test_dict_sorting(self):
+    self.assertEqual(bencode({'a':1,'c':10,'b':5}), 'd1:ai1e1:bi5e1:ci10ee')
   
   def test_other(self):
     self.assertRaises(TypeError, bencode, self)
@@ -119,6 +122,7 @@ class TestBdecode(unittest.TestCase):
     self.assertEqual({'cow':'moo', 'spam':'eggs'}, bdecode('d3:cow3:moo4:spam4:eggse'))
     self.assertEqual({'spam':['a', 'b']}, bdecode('d4:spaml1:a1:bee'))
     self.assertEqual({'publisher':'bob', 'publisher-webpage':'www.example.com', 'publisher.location':'home' }, bdecode('d9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee'))
+  
   
   def test_other(self):
     self.assertRaises(TypeError, bdecode, self)
