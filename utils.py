@@ -21,13 +21,15 @@ def bdecode(data):
     item = chunks.pop()
     if (item == 'd'): 
       item = chunks.pop()
-      hash = {}
+      h = {}
       while (item != 'e'):
         chunks.append(item)
+        if not chunks[-1].isdigit():
+          raise ValueError
         key = _dechunk(chunks)
-        hash[key] = _dechunk(chunks)
+        h[key] = _dechunk(chunks)
         item = chunks.pop()
-      return hash
+      return h
     elif (item == 'l'):
       item = chunks.pop()
       list = []
@@ -56,7 +58,14 @@ def bdecode(data):
   
   chunks = list(data)
   chunks.reverse()
-  root = _dechunk(chunks)
+  
+  try:
+    root = _dechunk(chunks)
+  except IndexError:
+    raise ValueError
+  
+  if len(chunks):
+    raise ValueError
   return root
 
 class TestBencode(unittest.TestCase):
@@ -123,6 +132,15 @@ class TestBdecode(unittest.TestCase):
     self.assertEqual({'spam':['a', 'b']}, bdecode('d4:spaml1:a1:bee'))
     self.assertEqual({'publisher':'bob', 'publisher-webpage':'www.example.com', 'publisher.location':'home' }, bdecode('d9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee'))
   
+  def test_invalid(self):
+    self.assertRaises(ValueError, bdecode, '3:af')
+    self.assertRaises(ValueError, bdecode, '3:afeh')
+    self.assertRaises(ValueError, bdecode, '3:afed')
+    self.assertRaises(ValueError, bdecode, 'iabce')
+    self.assertRaises(ValueError, bdecode, 'i1')
+    self.assertRaises(ValueError, bdecode, 'lrofle')
+    self.assertRaises(ValueError, bdecode, 'di1e3:lole')
+    self.assertRaises(ValueError, bdecode, 'what the fuck')
   
   def test_other(self):
     self.assertRaises(TypeError, bdecode, self)
