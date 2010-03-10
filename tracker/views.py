@@ -1,7 +1,7 @@
 # Create your views here.
 from django.http import HttpResponse
 from django.utils.encoding import smart_str
-from rain.tracker.models import Torrent, Peer
+from rain.tracker.models import Torrent, Peer, current_peers
 from rain import utils
 from rain.settings import MAGIC_VALUES
 import ipaddr
@@ -13,15 +13,35 @@ def tracker_error_response(value):
 def tracker_response(value):
   return HttpResponse(utils.bencode(value), mimetype='text/plain')
 
+def get_cleaned_hashes(request):
+  request.encoding = 'iso-8859-1'
+  hash_list = []
+  for dirty_hash in request.GET.getlist('info_hash'):
+    clean_hash, response = clean_info_hash(dirty_hash)
+    if response is not None:
+      return None, response
+    
+    hash_list.append(clean_hash)
+  
+  if hash_list == []:
+    return None, tracker_error_response('No info_hashes specified')
+  
+  return hash_list, None
+
+def clean_info_hash(dirty_hash):
+  try:
+    return dirty_hash.encode('iso-8859-1').encode('hex'), None
+  except AttributeError:
+    return None, tracker_error_response('Invalid info_hash')
+
 def parse_request(request):
   values = {}
   request.encoding = 'iso-8859-1'
-  
+    
   #Get the interesting values from the request
-  try:
-    values['info_hash'] = request.GET.get('info_hash', None).encode('iso-8859-1').encode('hex')
-  except AttributeError:
-    return None, tracker_error_response('No info_hash specified')
+  values['info_hash'], response = clean_info_hash(request.GET.get('info_hash', None))
+  if response is not None:
+    return None, response
   
   values['peer_id'] = request.GET.get('peer_id', None)
   values['ip'] = request.META.get('REMOTE_ADDR')
@@ -76,10 +96,6 @@ def get_matching_torrent(info_hash):
   except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
     return None, tracker_error_response('Problem with info_hash')
 
-def current_peers():
-  delta = datetime.timedelta(seconds=30*60) #30 minutes
-  return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
-
 def find_matching_peer(torrent, ip, port, key):
   peer_query = current_peers().filter(torrent=torrent).filter(ip=ip).filter(port=port)
   if key is not None:
@@ -114,6 +130,7 @@ class EventHandler(object):
       return None, tracker_error_response('Cant find which peer you are')
     
     peer.state = MAGIC_VALUES['seed']
+    peer.torrent.increment_downloaded()
     peer.save()
     
     return peer, HttpResponse('', mimetype='text/plain')
@@ -138,7 +155,7 @@ class EventHandler(object):
     
     return peer, None
 
-def generate_response(values, torrent, peer):
+def generate_announce_response(values, torrent, peer):
   peer_list = current_peers().filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
   num_peers = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['peer']).count()
   num_seeds = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['seed']).count()
@@ -148,12 +165,12 @@ def generate_response(values, torrent, peer):
   else:
     interval = MAGIC_VALUES['peer_interval']
   
-  return {
+  return tracker_response({
     'interval': interval,
     'complete': num_seeds,
     'incomplete': num_peers,
     'peers': peerset_to_ip(peer_list[:values['numwant']], values['compact']),
-  }
+  })
 
 def announce(request):
   #Parse the request and return any errors
@@ -178,7 +195,29 @@ def announce(request):
     return response
   
   #Find more peers on the same torrent that arent the current peer
-  response = generate_response(values=values, torrent=torrent, peer=peer)  
+  return generate_announce_response(values=values, torrent=torrent, peer=peer)  
+
+
+def generate_scrape_response(hashes):
+  response_dict = {'files' : {}}
   
-  return tracker_response(response)
+  for a_hash in hashes:
+    torrent, response = get_matching_torrent(info_hash=a_hash)
+    if response is not None:
+      return response
+    
+    response_dict['files'][a_hash] = {
+      'complete' : torrent.num_seeds(),
+      'downloaded' : torrent.downloaded,
+      'incomplete' : torrent.num_peers()
+    }
+  
+  return tracker_response(response_dict)
+
+def scrape(request):
+  hashes, response = get_cleaned_hashes(request)
+  if response is not None:
+    return response
+  
+  return generate_scrape_response(hashes)
 

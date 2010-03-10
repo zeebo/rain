@@ -9,11 +9,17 @@ class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')
   uploaded_by = models.ForeignKey(User)
   info_hash = models.CharField(max_length=40, editable=False, unique=True)
-  num_peers = models.IntegerField(default=0, editable=False)
-  num_seeds = models.IntegerField(default=0, editable=False)
+  downloaded = models.IntegerField(default=0)
   
-  def __repr__(self):
-    return self.info_hash
+  def num_seeds(self):
+    return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['seed']).count()
+  
+  def num_peers(self):
+    return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['peer']).count()
+  
+  def increment_downloaded(self):
+    self.downloaded += 1
+    self.save()
   
   def clean(self):
     from django.core.exceptions import ValidationError
@@ -39,7 +45,7 @@ class Torrent(models.Model):
     self.info_hash = the_hash
 
 class TorrentAdmin(admin.ModelAdmin):
-  list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers')
+  list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers', 'downloaded')
 
 class Peer(models.Model):
   STATE_CHOICES = (
@@ -66,6 +72,10 @@ class Peer(models.Model):
   def inactive(self):
     return not self.active()
   
+
+def current_peers():
+  delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive']) #30 minutes
+  return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
 
 class PeerAdmin(admin.ModelAdmin):
   list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
