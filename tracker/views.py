@@ -58,6 +58,15 @@ def announce(request):
     
     peer = new_peer
   
+  if event == 'completed':
+    if peer is None:
+      return tracker_error_response('Cant find which peer you are. thats a problem since your torrent apparently finished lol')
+    
+    peer.state = 'S'
+    peer.save()
+    
+    return HttpResponse('', mimetype='text/plain')
+  
   if event == 'stopped':
     if peer is None:
       return tracker_error_response('Cant find which peer you are. restart the torrent bro')
