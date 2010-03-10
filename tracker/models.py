@@ -39,12 +39,16 @@ class TorrentAdmin(admin.ModelAdmin):
   list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers')
 
 class Peer(models.Model):
+  STATE_CHOICES = (
+    ('P', 'Peer'),
+    ('S', 'Seed'),
+  )
   torrent = models.ForeignKey(Torrent)
   peer_id = models.CharField(max_length=20)
   port = models.IntegerField()
   ip = models.IPAddressField()
   key = models.CharField(max_length=100) #spec does not specify data type on key
-  state = models.CharField()
+  state = models.CharField(max_length=1, choices=STATE_CHOICES)
   supportcrypto = models.BooleanField(default=True) #currently unused
   
   last_announce = models.DateTimeField(auto_now=True)
