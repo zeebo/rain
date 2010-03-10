@@ -4,6 +4,7 @@ from django.utils.encoding import smart_str
 from rain.tracker.models import Torrent, Peer
 from rain import utils
 import ipaddr
+import datetime
 
 def tracker_error_response(value):
   return HttpResponse(utils.bencode({'failure reason': "Error: %s" % value}), mimetype='text/plain')
@@ -16,7 +17,11 @@ def parse_request(request):
   request.encoding = 'iso-8859-1'
   
   #Get the interesting values from the request
-  values['info_hash'] = request.GET.get('info_hash', None).encode('iso-8859-1').encode('hex')
+  try:
+    values['info_hash'] = request.GET.get('info_hash', None).encode('iso-8859-1').encode('hex')
+  except AttributeError:
+    return None, tracker_error_response('No info_hash specified')
+  
   values['peer_id'] = request.GET.get('peer_id', None)
   values['ip'] = request.META.get('REMOTE_ADDR')
   values['key'] = request.GET.get('key', None)
@@ -28,10 +33,14 @@ def parse_request(request):
     values['amount_left'] = int(request.GET.get('left', None))
     values['amount_downloaded'] = int(request.GET.get('downloaded', None))
     values['amount_uploaded'] = int(request.GET.get('uploaded', None))
-    values['compact'] = int(request.GET.get('compact', None))
-    values['numwant'] = int(request.GET.get('numwant', None))
+    
+    #Default values for parameters that arent required
+    values['numwant'] = int(request.GET.get('numwant', 30))
+    values['compact'] = int(request.GET.get('compact', 0))
   except ValueError:
     return None, tracker_error_response('error parsing integer field')
+  except TypeError:
+    return None, tracker_error_response('missing value for required field')
   
   return values, check_request_sanity(values)
 
@@ -66,8 +75,14 @@ def get_matching_torrent(info_hash):
   except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
     return None, tracker_error_response('Problem with info_hash')
 
+def current_peers():
+  delta = datetime.timedelta(seconds=30*60) #30 minutes
+  return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
+
 def find_matching_peer(torrent, ip, port, key):
-  peer_query = Peer.objects.filter(torrent=torrent).filter(ip=ip).filter(port=port)
+  delta = datetime.timedelta(seconds=30*60) #30 minutes
+  
+  peer_query = current_peers().filter(torrent=torrent).filter(ip=ip).filter(port=port)
   if key is not None:
     peer_query = peer_query.filter(key=key)
   try:
@@ -90,6 +105,7 @@ class EventHandler(object):
       new_peer.state = 'S' #Seed
     else:
       new_peer.state = 'P' #Peer
+    
     new_peer.save()
     
     return new_peer, None
@@ -102,7 +118,6 @@ class EventHandler(object):
     peer.save()
     
     return peer, HttpResponse('', mimetype='text/plain')
-  
   
   def handle_stopped(self, values, torrent, peer):
     if peer is None:
@@ -118,14 +133,16 @@ class EventHandler(object):
     
     if values['amount_left'] == 0:
       peer.state = 'S'
-      peer.save()
+    
+    #Make sure to save the peer regardless to update announce time
+    peer.save()
     
     return peer, None
 
 def generate_response(values, torrent, peer):
-  peer_list = Peer.objects.filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
-  num_peers = Peer.objects.filter(torrent=torrent).filter(state='P').count()
-  num_seeds = Peer.objects.filter(torrent=torrent).filter(state='S').count()
+  peer_list = current_peers().filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
+  num_peers = current_peers().filter(torrent=torrent).filter(state='P').count()
+  num_seeds = current_peers().filter(torrent=torrent).filter(state='S').count()
   
   if peer.state == 'S':
     interval = 300
