@@ -80,3 +80,16 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'rain.tracker',
 )
+
+
+MAGIC_VALUES = {
+  'time_until_inactive' : 30*60, #30 minutes
+  'seed_interval' : 300, #5 minutes
+  'peer_interval' : 30, #...
+  'numwant_default' : 30, #30 should be plent as stated by spec
+  'compact_default' : 0,  #1 for bandwidth, 0 for compatability
+  
+  #Don't change these. I mean you can but its pointless
+  'seed' : 'S', 
+  'peer' : 'P',
+}

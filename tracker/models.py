@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib import admin
 from rain.utils import bencode, bdecode
-from rain.settings import SECRET_KEY
+from rain.settings import SECRET_KEY, MAGIC_VALUES
 import os, hashlib, datetime
 
 class Torrent(models.Model):
@@ -43,8 +43,8 @@ class TorrentAdmin(admin.ModelAdmin):
 
 class Peer(models.Model):
   STATE_CHOICES = (
-    ('P', 'Peer'),
-    ('S', 'Seed'),
+    (MAGIC_VALUES['peer'], 'Peer'),
+    (MAGIC_VALUES['seed'], 'Seed'),
   )
   torrent = models.ForeignKey(Torrent)
   peer_id = models.CharField(max_length=20)
@@ -60,7 +60,7 @@ class Peer(models.Model):
     return "%s:%s" % (self.ip, self.port)
   
   def active(self):
-    delta = datetime.timedelta(seconds=30*60) #30 minutes
+    delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive']) #30 minutes
     return self.last_announce >= datetime.datetime.now() - delta
   
   def inactive(self):

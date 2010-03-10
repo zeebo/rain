@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.utils.encoding import smart_str
 from rain.tracker.models import Torrent, Peer
 from rain import utils
+from rain.settings import MAGIC_VALUES
 import ipaddr
 import datetime
 
@@ -35,8 +36,8 @@ def parse_request(request):
     values['amount_uploaded'] = int(request.GET.get('uploaded', None))
     
     #Default values for parameters that arent required
-    values['numwant'] = int(request.GET.get('numwant', 30))
-    values['compact'] = int(request.GET.get('compact', 0))
+    values['numwant'] = int(request.GET.get('numwant', MAGIC_VALUES['numwant_default']))
+    values['compact'] = int(request.GET.get('compact', MAGIC_VALUES['compact_default']))
   except ValueError:
     return None, tracker_error_response('error parsing integer field')
   except TypeError:
@@ -80,8 +81,6 @@ def current_peers():
   return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
 
 def find_matching_peer(torrent, ip, port, key):
-  delta = datetime.timedelta(seconds=30*60) #30 minutes
-  
   peer_query = current_peers().filter(torrent=torrent).filter(ip=ip).filter(port=port)
   if key is not None:
     peer_query = peer_query.filter(key=key)
@@ -102,9 +101,9 @@ class EventHandler(object):
     
     new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], ip=values['ip'], key=values['key'])
     if values['amount_left'] == 0:
-      new_peer.state = 'S' #Seed
+      new_peer.state = MAGIC_VALUES['seed'] #Seed
     else:
-      new_peer.state = 'P' #Peer
+      new_peer.state = MAGIC_VALUES['peer'] #Peer
     
     new_peer.save()
     
@@ -114,7 +113,7 @@ class EventHandler(object):
     if peer is None:
       return None, tracker_error_response('Cant find which peer you are')
     
-    peer.state = 'S'
+    peer.state = MAGIC_VALUES['seed']
     peer.save()
     
     return peer, HttpResponse('', mimetype='text/plain')
@@ -132,7 +131,7 @@ class EventHandler(object):
       return None, tracker_error_response('Cant find which peer you are')
     
     if values['amount_left'] == 0:
-      peer.state = 'S'
+      peer.state = MAGIC_VALUES['seed']
     
     #Make sure to save the peer regardless to update announce time
     peer.save()
@@ -141,13 +140,13 @@ class EventHandler(object):
 
 def generate_response(values, torrent, peer):
   peer_list = current_peers().filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
-  num_peers = current_peers().filter(torrent=torrent).filter(state='P').count()
-  num_seeds = current_peers().filter(torrent=torrent).filter(state='S').count()
+  num_peers = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['peer']).count()
+  num_seeds = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['seed']).count()
   
-  if peer.state == 'S':
-    interval = 300
+  if peer.state == MAGIC_VALUES['seed']:
+    interval = MAGIC_VALUES['seed_interval']
   else:
-    interval = 30
+    interval = MAGIC_VALUES['peer_interval']
   
   return {
     'interval': interval,
