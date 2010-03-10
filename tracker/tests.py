@@ -13,11 +13,12 @@ class AnnounceTest(TestCase):
                          numwant='200',
                          key='test',
                          compact='1',
-                         event=''):
+                         event=None):
     local_settings = locals()
     del local_settings['self']
-    if event == '':
-      del local_settings['event']
+    for key, value in local_settings.items():
+      if value is None:
+        del local_settings[key]
     
     return self.client.get('/announce/?%s' % '&'.join(['%s=%s' % (k, local_settings[k]) for k in local_settings]))
   
@@ -25,6 +26,11 @@ class AnnounceTest(TestCase):
     for name, value in invalid_args:
       response = self.make_request(**{name: value})
       self.assertContains(response, 'Error: ', status_code=200)
+  
+  def test_double_start(self):
+    response = self.make_request(event='started')
+    response = self.make_request(event='started')
+    self.assertContains(response, 'Error: ', status_code=200)
   
   def test_peer_cycle(self):
     response = self.make_request(event='started')
@@ -51,29 +57,29 @@ class AnnounceTest(TestCase):
     self.failUnlessEqual(new_peer.state, 'S')
   
   def test_invalid_hash(self):
-    self.check_invalid_argument( (('info_hash', 'invalid_hash'), ) )
+    self.check_invalid_argument( (('info_hash', 'invalid_hash'), ('info_hash', None)) )
   
   def test_invalid_peer_id(self):
-    self.check_invalid_argument( (('peer_id', 'over_twenty_characters_long'), ) )
+    self.check_invalid_argument( (('peer_id', 'over_twenty_characters_long'), ('peer_id', None)) )
   
   def test_invalid_port(self):
-    self.check_invalid_argument( (('port', '123456'), ('port', 'abc'), ('port', '-5')) )
+    self.check_invalid_argument( (('port', '123456'), ('port', 'abc'), ('port', '-5'), ('port', None)) )
   
   def test_invalid_uploaded(self):
-    self.check_invalid_argument( (('uploaded', '-5'), ('uploaded', 'abc')) )
+    self.check_invalid_argument( (('uploaded', '-5'), ('uploaded', 'abc'), ('uploaded', None)) )
   
   def test_invalid_downloaded(self):
-    self.check_invalid_argument( (('downloaded', '-5'), ('downloaded', 'abc')) )
+    self.check_invalid_argument( (('downloaded', '-5'), ('downloaded', 'abc'), ('downloaded', None)) )
   
   def test_invalid_left(self):
-    self.check_invalid_argument( (('left', '-5'), ('left', 'abc')) )
+    self.check_invalid_argument( (('left', '-5'), ('left', 'abc'), ('left', None)) )
    
   def test_invalid_numwant(self):
-    self.check_invalid_argument( (('numwant', '-5'), ('numwant', 'abc')) )
+    self.check_invalid_argument( (('numwant', '-5'), ('numwant', 'abc'), ('numwant', None)) )
   
   def test_invalid_compact(self):
-    self.check_invalid_argument( (('compact', '2'), ('compact', 'abc')) )
+    self.check_invalid_argument( (('compact', '2'), ('compact', 'abc'), ('compact', None)) )
   
   def test_invalid_event(self):
-    self.check_invalid_argument( (('event', 'bad_event'), ) )
+    self.check_invalid_argument( (('event', 'bad_event'), ('event', None) ) )
     
