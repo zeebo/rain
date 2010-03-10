@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib import admin
 from rain.utils import bencode, bdecode
 from rain.settings import SECRET_KEY
-import os, hashlib
+import os, hashlib, datetime
 
 class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')
@@ -59,6 +59,13 @@ class Peer(models.Model):
   def ip_port(self):
     return "%s:%s" % (self.ip, self.port)
   
+  def active(self):
+    delta = datetime.timedelta(seconds=30*60) #30 minutes
+    return self.last_announce >= datetime.datetime.now() - delta
+  
+  def inactive(self):
+    return not self.active()
+  
 
 class PeerAdmin(admin.ModelAdmin):
-  list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce')
+  list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
