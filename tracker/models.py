@@ -11,6 +11,9 @@ class Torrent(models.Model):
   info_hash = models.CharField(max_length=40, editable=False, unique=True)
   downloaded = models.IntegerField(default=0)
   
+  def __unicode__(self):
+    return self.info_hash
+  
   def num_seeds(self):
     return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['seed']).count()
   
