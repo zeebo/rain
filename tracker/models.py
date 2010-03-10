@@ -12,6 +12,9 @@ class Torrent(models.Model):
   num_peers = models.IntegerField(default=0, editable=False)
   num_seeds = models.IntegerField(default=0, editable=False)
   
+  def __repr__(self):
+    return self.info_hash
+  
   def clean(self):
     from django.core.exceptions import ValidationError
     
@@ -52,3 +55,10 @@ class Peer(models.Model):
   supportcrypto = models.BooleanField(default=True) #currently unused
   
   last_announce = models.DateTimeField(auto_now=True)
+  
+  def ip_port(self):
+    return "%s:%s" % (self.ip, self.port)
+  
+
+class PeerAdmin(admin.ModelAdmin):
+  list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce')

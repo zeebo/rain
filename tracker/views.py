@@ -29,10 +29,10 @@ def announce(request):
   peer_id = request.GET.get('peer_id', 'no-peer-id')
   ip = request.META.get('REMOTE_ADDR')
   key = request.GET.get('key', '')
-  port = request.GET.get('port', 0)
+  port = int(request.GET.get('port', '0'))
   event = request.GET.get('event', 'update')
-  amount_left = request.GET.get('left', 0)
-  compact = request.GET.get('compact', 0)
+  amount_left = int(request.GET.get('left', '-1'))
+  compact = int(request.GET.get('compact', '0'))
   numwant = int(request.GET.get('numwant', '30'))
   
   #Attempt to find the peer who is doing the announce based on key, ip and torrent
@@ -74,13 +74,26 @@ def announce(request):
     peer.delete()
     return HttpResponse('', mimetype='text/plain')
   
+  if event == 'update':
+    if peer is None:
+      return tracker_error_response('Cant find which peer you are. restart the torrent bro')
+      
+    if amount_left == 0:
+      peer.state = 'S'
+      peer.save()
+  
   #Find more peers on the same torrent that arent the current peer
   peer_list = Peer.objects.filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
   num_peers = Peer.objects.filter(torrent=torrent).filter(state='P').count()
   num_seeds = Peer.objects.filter(torrent=torrent).filter(state='S').count()
   
+  if peer.state == 'S':
+    interval = 300
+  else:
+    interval = 30
+  
   response = {
-    'interval': 30,
+    'interval': interval,
     'complete': num_seeds,
     'incomplete': num_peers,
     'peers': peerset_to_ip(peer_list[:numwant], compact),
