@@ -6,10 +6,53 @@ from rain import utils
 import ipaddr
 
 def tracker_error_response(value):
-  return HttpResponse(utils.bencode({'failure reason':value}), mimetype='text/plain')
+  return HttpResponse(utils.bencode({'failure reason': "Error: %s" % value}), mimetype='text/plain')
 
 def tracker_response(value):
   return HttpResponse(utils.bencode(value), mimetype='text/plain')
+
+def parse_request(request):
+  values = {}
+  request.encoding = 'iso-8859-1'
+  
+  #Get the interesting values from the request
+  values['info_hash'] = request.GET.get('info_hash', None).encode('iso-8859-1').encode('hex')
+  values['peer_id'] = request.GET.get('peer_id', None)
+  values['ip'] = request.META.get('REMOTE_ADDR')
+  values['key'] = request.GET.get('key', None)
+  values['event'] = request.GET.get('event', 'update')
+  
+  #These are integer values and require special handling
+  try:
+    values['port'] = int(request.GET.get('port', None))
+    values['amount_left'] = int(request.GET.get('left', None))
+    values['amount_downloaded'] = int(request.GET.get('downloaded', None))
+    values['amount_uploaded'] = int(request.GET.get('uploaded', None))
+    values['compact'] = int(request.GET.get('compact', None))
+    values['numwant'] = int(request.GET.get('numwant', None))
+  except ValueError:
+    return None, tracker_error_response('error parsing integer field')
+  
+  return values, check_request_sanity(values)
+
+def check_request_sanity(values):
+  if not 0 < values['port'] < 65536:
+    return tracker_error_response('invalid port')  
+  if not values['amount_left'] >= 0:
+    return tracker_error_response('invalid amount remaining')  
+  if not values['amount_downloaded'] >= 0:
+    return tracker_error_response('invalid downloaded amount')  
+  if not values['amount_uploaded'] >= 0:
+    return tracker_error_response('invalid uploaded amount')  
+  if values['compact'] not in (0, 1):
+    return tracker_error_response('compact must be 0 or 1')  
+  if not values['numwant'] >= 0:
+    return tracker_error_response('invalid number of peers requested')  
+  if values['event'] not in ('started', 'completed', 'stopped', 'update'):
+    return tracker_error_response('invalid event')
+  
+  #all the data is good!
+  return None
 
 def peerset_to_ip(queryset, compact=1):
   if compact:
@@ -17,72 +60,69 @@ def peerset_to_ip(queryset, compact=1):
   else:
     return [{'peer id': peer.peer_id, 'ip': peer.ip, 'port': peer.port} for peer in queryset]
 
-def announce(request):
-  request.encoding = 'iso-8859-1'
-  info_hash = request.GET.get('info_hash', '').encode('iso-8859-1').encode('hex')
+def get_matching_torrent(info_hash):
   try:
-    torrent = Torrent.objects.filter(info_hash=info_hash).get()
+    return Torrent.objects.filter(info_hash=info_hash).get(), None
   except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
-    return tracker_error_response('Problem with info_hash')
-  
-  #Parse data out
-  peer_id = request.GET.get('peer_id', 'no-peer-id')
-  ip = request.META.get('REMOTE_ADDR')
-  key = request.GET.get('key', '')
-  port = int(request.GET.get('port', '0'))
-  event = request.GET.get('event', 'update')
-  amount_left = int(request.GET.get('left', '-1'))
-  compact = int(request.GET.get('compact', '0'))
-  numwant = int(request.GET.get('numwant', '30'))
-  
-  #Attempt to find the peer who is doing the announce based on key, ip and torrent
-  peer_query = Peer.objects.filter(torrent=torrent).filter(ip=ip)
-  if key != '':
+    return None, tracker_error_response('Problem with info_hash')
+
+def find_matching_peer(torrent, ip, port, key):
+  peer_query = Peer.objects.filter(torrent=torrent).filter(ip=ip).filter(port=port)
+  if key is not None:
     peer_query = peer_query.filter(key=key)
   try:
-    peer = peer_query.get()
-  except (Peer.MultipleObjectsReturned, Peer.DoesNotExist):
-    peer = None
-  
-  #Make a new peer object based on the announce
-  if event == 'started':
-    if peer is not None:
-      return tracker_error_response('Already on that torrent. uh oh.')
+    return peer_query.get(), None
+  except Peer.MultipleObjectsReturned:
+    return None, tracker_error_response('Multiple peers match that torrent/ip/port/key combination')
+  except Peer.DoesNotExist:
+    return None, None
+
+class EventHandler(object):
+  def __call__(self, values, torrent, peer):
+    return getattr(self, 'handle_%s' % values['event'])(values, torrent, peer)
     
-    new_peer = Peer(torrent=torrent, peer_id=peer_id, port=port, ip=ip, key=key)
-    if amount_left == 0:
+  def handle_started(self, values, torrent, peer):
+    if peer is not None:
+      return None, tracker_error_response('You are already on this torrent')
+    
+    new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], ip=values['ip'], key=values['key'])
+    if values['amount_left'] == 0:
       new_peer.state = 'S' #Seed
     else:
       new_peer.state = 'P' #Peer
     new_peer.save()
     
-    peer = new_peer
+    return new_peer, None
   
-  if event == 'completed':
+  def handle_completed(self, values, torrent, peer):
     if peer is None:
-      return tracker_error_response('Cant find which peer you are. thats a problem since your torrent apparently finished lol')
+      return None, tracker_error_response('Cant find which peer you are')
     
     peer.state = 'S'
     peer.save()
     
-    return HttpResponse('', mimetype='text/plain')
+    return peer, HttpResponse('', mimetype='text/plain')
   
-  if event == 'stopped':
+  
+  def handle_stopped(self, values, torrent, peer):
     if peer is None:
-      return tracker_error_response('Cant find which peer you are. restart the torrent bro')
+      return None, tracker_error_response('Cant find which peer you are')
     
     peer.delete()
-    return HttpResponse('', mimetype='text/plain')
+    
+    return None, HttpResponse('', mimetype='text/plain')
   
-  if event == 'update':
+  def handle_update(self, values, torrent, peer):
     if peer is None:
-      return tracker_error_response('Cant find which peer you are. restart the torrent bro')
-      
-    if amount_left == 0:
+      return None, tracker_error_response('Cant find which peer you are')
+    
+    if values['amount_left'] == 0:
       peer.state = 'S'
       peer.save()
-  
-  #Find more peers on the same torrent that arent the current peer
+    
+    return peer, None
+
+def generate_response(values, torrent, peer):
   peer_list = Peer.objects.filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
   num_peers = Peer.objects.filter(torrent=torrent).filter(state='P').count()
   num_seeds = Peer.objects.filter(torrent=torrent).filter(state='S').count()
@@ -92,12 +132,37 @@ def announce(request):
   else:
     interval = 30
   
-  response = {
+  return {
     'interval': interval,
     'complete': num_seeds,
     'incomplete': num_peers,
-    'peers': peerset_to_ip(peer_list[:numwant], compact),
+    'peers': peerset_to_ip(peer_list[:values['numwant']], values['compact']),
   }
+
+def announce(request):
+  #Parse the request and return any errors
+  values, response = parse_request(request)
+  if response is not None:
+    return response
+  
+  #Find the torrent the request is for and return any errors
+  torrent, response = get_matching_torrent(info_hash=values['info_hash'])
+  if response is not None:
+    return response
+  
+  #Find the peer that matches the request, or none if it is new
+  peer, response = find_matching_peer(torrent=torrent, ip=values['ip'], port=values['port'], key=values['key'])
+  if response is not None:
+    return response
+  
+  #Create an event handler and hand off the event to it.
+  handler = EventHandler()
+  peer, response = handler(values=values, torrent=torrent, peer=peer)
+  if response is not None:
+    return response
+  
+  #Find more peers on the same torrent that arent the current peer
+  response = generate_response(values=values, torrent=torrent, peer=peer)  
   
   return tracker_response(response)
 
