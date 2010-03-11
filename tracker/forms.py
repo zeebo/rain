@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import User
 from tracker.models import Torrent
 from utils import bencode, bdecode
 import hashlib
@@ -10,7 +11,7 @@ class UploadTorrentForm(forms.ModelForm):
   class Meta:
     model = Torrent
     fields = ("torrent",)
-
+  
   def clean_torrent(self):    
     torrent = self.cleaned_data["torrent"]
     

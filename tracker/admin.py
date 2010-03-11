@@ -18,25 +18,28 @@ class ReadOnlyWidget(forms.Widget):
   def value_from_datadict(self, data, files, name):
     return self.original_value
 
-class TorrentAdmin(admin.ModelAdmin):
-  form = UploadTorrentForm
-  list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers', 'downloaded')
-  
+class ReadOnlyModelAdmin(admin.ModelAdmin):
   def get_form(self, request, obj=None, **kwargs):
-    form = super(TorrentAdmin, self).get_form(request, obj)
-    
-    for field_name in form.base_fields:
-      if hasattr(obj, 'get_%s_display' % field_name):
-        display_value = getattr(obj, 'get_%s_display' % field_name)()
-      else:
-        display_value = None
+    form = super(ReadOnlyModelAdmin, self).get_form(request, obj)
+    #return form
+    #Force read only in edit mode
+    if obj is not None:
+      for field_name in form.base_fields:
+        if hasattr(obj, 'get_%s_display' % field_name):
+          display_value = getattr(obj, 'get_%s_display' % field_name)()
+        else:
+          display_value = None
       
-      form.base_fields[field_name].widget = ReadOnlyWidget(getattr(obj, field_name, ''), display_value)
-      form.base_fields[field_name].required = False
+        form.base_fields[field_name].widget = ReadOnlyWidget(getattr(obj, field_name, ''), display_value)
+        form.base_fields[field_name].required = False
     
     return form
 
-class PeerAdmin(admin.ModelAdmin):
+class TorrentAdmin(ReadOnlyModelAdmin):
+  #form = UploadTorrentForm
+  list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers', 'downloaded')
+
+class PeerAdmin(ReadOnlyModelAdmin):
   list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
 
 admin.site.register(Torrent, TorrentAdmin)

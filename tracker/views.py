@@ -16,11 +16,8 @@ def upload_torrent(request):
   if request.method == 'POST':
     form = UploadTorrentForm(request.POST, request.FILES)
     if form.is_valid():
-      new_torrent = Torrent(torrent=request.FILES['file'], uploaded_by=User.objects.all().get(pk=1))
-      try:
-        new_torrent.clean()
-      except ValidationError, message:
-        return HttpResponse(message)
+      new_torrent = Torrent(torrent=request.FILES['torrent'], uploaded_by=User.objects.all().get(pk=1))
+      new_torrent.set_info_hash()
       new_torrent.save()
       return HttpResponse('Got the file')
   else:

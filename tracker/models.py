@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.contrib import admin
 from rain.utils import bencode, bdecode
 from rain.settings import SECRET_KEY, MAGIC_VALUES
-import os, hashlib, datetime
+from django.core.exceptions import ValidationError
+import os, hashlib, datetime, logging
 
 class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')
@@ -20,15 +21,19 @@ class Torrent(models.Model):
   def num_peers(self):
     return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['peer']).count()
   
-  def increment_downloaded(self):
-    self.downloaded += 1
-    self.save()
+  def torrent_data(self):
+    return_data = self.torrent.read()
+    self.torrent.seek(0)
+    return return_data
   
-  def save(self, *args, **kwargs):
+  def set_info_hash(self):
+    self.torrent.seek(0)
     data = bdecode(self.torrent.read())
     self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
     
-    super(Torrent, self).save(*args, **kwargs)
+  def increment_downloaded(self):
+    self.downloaded += 1
+    self.save()
 
 class Peer(models.Model):
   STATE_CHOICES = (
