@@ -5,7 +5,7 @@ from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from rain.tracker.models import Torrent, Peer, current_peers
-from rain.tracker.forms import UploadFileForm
+from rain.tracker.forms import UploadTorrentForm
 from rain import utils
 from rain.settings import MAGIC_VALUES
 import ipaddr
@@ -14,7 +14,7 @@ import hashlib
 
 def upload_torrent(request):
   if request.method == 'POST':
-    form = UploadFileForm(request.POST, request.FILES)
+    form = UploadTorrentForm(request.POST, request.FILES)
     if form.is_valid():
       new_torrent = Torrent(torrent=request.FILES['file'], uploaded_by=User.objects.all().get(pk=1))
       try:
@@ -24,7 +24,7 @@ def upload_torrent(request):
       new_torrent.save()
       return HttpResponse('Got the file')
   else:
-    form = UploadFileForm()
+    form = UploadTorrentForm()
   return render_to_response('tracker/upload_torrent.html', {'form': form}, context_instance=RequestContext(request))
 
 def announce(request):

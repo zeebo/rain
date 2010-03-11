@@ -24,31 +24,11 @@ class Torrent(models.Model):
     self.downloaded += 1
     self.save()
   
-  def clean(self):
-    from django.core.exceptions import ValidationError
+  def save(self, *args, **kwargs):
+    data = bdecode(self.torrent.read())
+    self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
     
-    # Check that the torrent is actually a torrent file and set the info_hash
-    _, ext = os.path.splitext(self.torrent.name)
-    if ext != '.torrent':
-      raise ValidationError('File must end with .torrent')
-    try:
-      data = bdecode(self.torrent.read())
-    except ValueError:
-      raise ValidationError('Problem parsing torrent file')
-    if 'info' not in data:
-      raise ValidationError('Info dict not in torrent file')
-    
-    #Verify uniqueness
-    the_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
-    torrents_with_hash = Torrent.objects.filter(info_hash=the_hash)
-    if len(torrents_with_hash) != 0 and torrents_with_hash[0].pk != self.pk:
-      raise ValidationError('Torrent already exists [%s]' % the_hash)
-    
-    self.torrent.name = "%s.torrent" % hashlib.sha1(the_hash + SECRET_KEY).digest().encode('hex')
-    self.info_hash = the_hash
-
-class TorrentAdmin(admin.ModelAdmin):
-  list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers', 'downloaded')
+    super(Torrent, self).save(*args, **kwargs)
 
 class Peer(models.Model):
   STATE_CHOICES = (
@@ -69,7 +49,7 @@ class Peer(models.Model):
     return "%s:%s" % (self.ip, self.port)
   
   def active(self):
-    delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive']) #30 minutes
+    delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
     return self.last_announce >= datetime.datetime.now() - delta
   
   def inactive(self):
@@ -77,8 +57,5 @@ class Peer(models.Model):
   
 
 def current_peers():
-  delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive']) #30 minutes
+  delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
   return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
-
-class PeerAdmin(admin.ModelAdmin):
-  list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
