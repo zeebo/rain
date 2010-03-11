@@ -18,14 +18,18 @@ def bencode(data):
 def bdecode(data):
   '''Main function to decode bencoded data'''
   def _dechunk(chunks):
-    item = chunks.pop()
+    try:
+      item = chunks.pop()
+    except IndexError:
+      raise ValueError('Unexpected end of data')
+    
     if (item == 'd'): 
       item = chunks.pop()
       h = {}
       while (item != 'e'):
         chunks.append(item)
         if not chunks[-1].isdigit():
-          raise ValueError
+          raise ValueError('Non numeric digit')
         key = _dechunk(chunks)
         h[key] = _dechunk(chunks)
         item = chunks.pop()
@@ -54,7 +58,6 @@ def bdecode(data):
       for i in range(1, int(num) + 1):
         line += chunks.pop()
       return line
-    raise ValueError
   
   chunks = list(data)
   chunks.reverse()
@@ -65,7 +68,7 @@ def bdecode(data):
     raise ValueError
   
   if len(chunks):
-    raise ValueError
+    raise ValueError('Extra data')
   return root
 
 class TestBencode(unittest.TestCase):
@@ -144,6 +147,9 @@ class TestBdecode(unittest.TestCase):
   
   def test_other(self):
     self.assertRaises(TypeError, bdecode, self)
+  
+  def test_empty(self):
+    self.assertRaises(ValueError, bdecode, '')
 
 
 class TestReciprical(unittest.TestCase):
@@ -169,7 +175,7 @@ class TestReciprical(unittest.TestCase):
     return random.choice(functions)(recursion)
   
   def test_reciprical(self):
-    for i in xrange(1000):
+    for i in xrange(100):
       element = self.rand_element()
       self.assertEqual(bdecode(bencode(element)), element)
 
