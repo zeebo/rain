@@ -1,11 +1,31 @@
 # Create your views here.
 from django.http import HttpResponse
-from django.utils.encoding import smart_str
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from rain.tracker.models import Torrent, Peer, current_peers
+from rain.tracker.forms import UploadFileForm
 from rain import utils
 from rain.settings import MAGIC_VALUES
 import ipaddr
 import datetime
+import hashlib
+
+def upload_torrent(request):
+  if request.method == 'POST':
+    form = UploadFileForm(request.POST, request.FILES)
+    if form.is_valid():
+      new_torrent = Torrent(torrent=request.FILES['file'], uploaded_by=User.objects.all().get(pk=1))
+      try:
+        new_torrent.clean()
+      except ValidationError, message:
+        return HttpResponse(message)
+      new_torrent.save()
+      return HttpResponse('Got the file')
+  else:
+    form = UploadFileForm()
+  return render_to_response('tracker/upload_torrent.html', {'form': form}, context_instance=RequestContext(request))
 
 def announce(request):
   #Parse the request and return any errors
@@ -153,9 +173,9 @@ class EventHandler(object):
     
     new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], ip=values['ip'], key=values['key'])
     if values['amount_left'] == 0:
-      new_peer.state = MAGIC_VALUES['seed'] #Seed
+      new_peer.state = MAGIC_VALUES['seed']
     else:
-      new_peer.state = MAGIC_VALUES['peer'] #Peer
+      new_peer.state = MAGIC_VALUES['peer']
     
     new_peer.save()
     
