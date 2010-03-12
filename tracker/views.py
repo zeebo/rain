@@ -4,7 +4,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from rain.tracker.models import Torrent, Peer, current_peers
+from rain.tracker.models import Torrent, Peer, current_peers, UserIP, RatioInfo, UserRatio
 from rain.tracker.forms import UploadTorrentForm
 from rain import utils
 from rain.settings import MAGIC_VALUES
@@ -28,19 +28,29 @@ def announce(request):
   if response is not None:
     return response
   
+  #Before doing anything, authenticate based on IP
+  user_ip, response = get_user_from_ip(values['ip'])
+  if response is not None:
+    return response
+  
   #Find the torrent the request is for and return any errors
   torrent, response = get_matching_torrent(info_hash=values['info_hash'])
   if response is not None:
     return response
   
   #Find the peer that matches the request, or none if it is new
-  peer, response = find_matching_peer(torrent=torrent, ip=values['ip'], port=values['port'], key=values['key'])
+  peer, response = find_matching_peer(torrent=torrent, user_ip=user_ip, port=values['port'], key=values['key'])
+  if response is not None:
+    return response
+  
+  #Update the ratio
+  response = update_ratio(peer, torrent, values.get('amount_downloaded', None), values.get('amount_uploaded', None))
   if response is not None:
     return response
   
   #Create an event handler and hand off the event to it.
   handler = EventHandler()
-  peer, response = handler(values=values, torrent=torrent, peer=peer)
+  peer, response = handler(values=values, user_ip=user_ip, torrent=torrent, peer=peer)
   if response is not None:
     return response
   
@@ -57,6 +67,46 @@ def scrape(request):
   return generate_scrape_response(hashes)
 
 ###################################################################
+
+def get_user_from_ip(ip):
+  queryset = UserIP.objects.filter(ip=ip)
+  user_count = queryset.count()
+  if user_count > 1:
+    return None, tracker_error_response('Multiple users registered with that ip address. big trouble!')
+  if user_count == 0:
+    return None, tracker_error_response('Cant find your ip address. Please login then add the torrent')
+  
+  return queryset.get(), None
+
+def update_ratio(peer, torrent, downloaded, uploaded):
+  if downloaded is None or uploaded is None:
+    return tracker_error_response('Must pass downloaded/uploaded info')
+  
+  if peer is None:
+    if downloaded > 0 or uploaded > 0:
+      return tracker_error_response('Downloaded or uploaded before recorded as a peer')
+    return None
+  
+  ratio_object, created = RatioInfo.objects.get_or_create(user=peer.user_ip.user, torrent=torrent)
+  
+  delta_download = downloaded - ratio_object.downloaded
+  delta_uploaded = uploaded - ratio_object.uploaded
+  
+  if delta_uploaded < 0 or delta_download < 0:
+    return tracker_error_response('Downloaded/uploaded info went backwards. uh oh.')
+  
+  ratio_object.downloaded = downloaded
+  ratio_object.uploaded = uploaded
+  
+  user_ratio_object, created = UserRatio.objects.get_or_create(user=peer.user_ip.user)
+  
+  user_ratio_object.downloaded += delta_download
+  user_ratio_object.uploaded += delta_uploaded
+  
+  ratio_object.save()
+  user_ratio_object.save()
+  
+  return None
 
 def tracker_error_response(value):
   return HttpResponse(utils.bencode({'failure reason': "Error: %s" % value}), mimetype='text/plain')
@@ -95,7 +145,7 @@ def parse_request(request):
     return None, response
   
   values['peer_id'] = request.GET.get('peer_id', None)
-  values['ip'] = request.META.get('REMOTE_ADDR')
+  values['ip'] = request.META.get('REMOTE_ADDR') #ignore any sent ip address
   values['key'] = request.GET.get('key', None)
   values['event'] = request.GET.get('event', 'update')
   
@@ -131,15 +181,17 @@ def check_request_sanity(values):
     return tracker_error_response('invalid number of peers requested')  
   if values['event'] not in ('started', 'completed', 'stopped', 'update'):
     return tracker_error_response('invalid event')
+  if values['peer_id'] is None:
+    return tracker_error_response('peer id required')
   
   #all the data is good!
   return None
 
 def peerset_to_ip(queryset, compact=1):
   if compact:
-    return ''.join("%s%s%s" % (ipaddr.IPAddress(peer.ip).packed, chr(peer.port//256), chr(peer.port%256)) for peer in queryset)
+    return ''.join("%s%s%s" % (ipaddr.IPAddress(peer.user_ip.ip).packed, chr(peer.port//256), chr(peer.port%256)) for peer in queryset)
   else:
-    return [{'peer id': peer.peer_id, 'ip': peer.ip, 'port': peer.port} for peer in queryset]
+    return [{'peer id': peer.peer_id, 'ip': peer.user_ip.ip, 'port': peer.port} for peer in queryset]
 
 def get_matching_torrent(info_hash):
   try:
@@ -147,8 +199,8 @@ def get_matching_torrent(info_hash):
   except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
     return None, tracker_error_response('Problem with info_hash')
 
-def find_matching_peer(torrent, ip, port, key):
-  peer_query = current_peers().filter(torrent=torrent).filter(ip=ip).filter(port=port)
+def find_matching_peer(torrent, user_ip, port, key):
+  peer_query = current_peers().filter(torrent=torrent).filter(user_ip=user_ip).filter(port=port)
   if key is not None:
     peer_query = peer_query.filter(key=key)
   try:
@@ -159,14 +211,19 @@ def find_matching_peer(torrent, ip, port, key):
     return None, None
 
 class EventHandler(object):
-  def __call__(self, values, torrent, peer):
-    return getattr(self, 'handle_%s' % values['event'])(values, torrent, peer)
+  def __call__(self, **kwargs):
     
-  def handle_started(self, values, torrent, peer):
+    #Update the peer if it exists to update last_announce
+    if kwargs['peer'] is not None:
+      kwargs['peer'].save()
+    
+    return getattr(self, 'handle_%s' % kwargs['values']['event'])(**kwargs)
+    
+  def handle_started(self, values, user_ip, torrent, peer):
     if peer is not None:
       return None, tracker_error_response('You are already on this torrent')
     
-    new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], ip=values['ip'], key=values['key'])
+    new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], user_ip=user_ip, key=values['key'])
     if values['amount_left'] == 0:
       new_peer.state = MAGIC_VALUES['seed']
     else:
@@ -176,7 +233,7 @@ class EventHandler(object):
     
     return new_peer, None
   
-  def handle_completed(self, values, torrent, peer):
+  def handle_completed(self, values, user_ip, torrent, peer):
     if peer is None:
       return None, tracker_error_response('Cant find which peer you are')
     
@@ -186,7 +243,7 @@ class EventHandler(object):
     
     return peer, HttpResponse('', mimetype='text/plain')
   
-  def handle_stopped(self, values, torrent, peer):
+  def handle_stopped(self, values, user_ip, torrent, peer):
     if peer is None:
       return None, tracker_error_response('Cant find which peer you are')
     
@@ -194,15 +251,13 @@ class EventHandler(object):
     
     return None, HttpResponse('', mimetype='text/plain')
   
-  def handle_update(self, values, torrent, peer):
+  def handle_update(self, values, user_ip, torrent, peer):
     if peer is None:
       return None, tracker_error_response('Cant find which peer you are')
     
     if values['amount_left'] == 0:
       peer.state = MAGIC_VALUES['seed']
-    
-    #Make sure to save the peer regardless to update announce time
-    peer.save()
+      peer.save()
     
     return peer, None
 

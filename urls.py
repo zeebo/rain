@@ -9,5 +9,5 @@ urlpatterns = patterns('',
     (r'^announce$', announce),
     (r'^scrape$', scrape),
     (r'^upload$', upload_torrent),
-    (r'^tracker/media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}), #probably security vuln but ok for now.
+    #(r'^tracker/media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}), #probably security vuln but ok for now.
 )

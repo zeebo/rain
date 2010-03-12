@@ -2,7 +2,7 @@ from django.test import TestCase
 from rain.tracker.models import Peer
 
 class AnnounceTest(TestCase):
-  fixtures = ['a_torrent.json']
+  fixtures = ['a_torrent.json', 'a_user.json']
   
   def make_request(self, info_hash='%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b',
                          peer_id='test',
@@ -29,6 +29,7 @@ class AnnounceTest(TestCase):
   
   def test_double_start(self):
     response = self.make_request(event='started')
+    self.assertNotContains(response, 'Error: ', status_code=200)
     response = self.make_request(event='started')
     self.assertContains(response, 'Error: ', status_code=200)
   

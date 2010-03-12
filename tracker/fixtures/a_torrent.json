@@ -4,9 +4,17 @@
     "model": "tracker.torrent", 
     "fields": {
       "downloaded": 0, 
-      "torrent": "torrents/bada348ead5ed1f2a9442bd61d261f5cef502bd7_.torrent", 
+      "torrent": "torrents/midterm__.torrent", 
       "info_hash": "eb228c086e67da7f5e435ef6e4757d293107008b", 
       "uploaded_by": 1
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "tracker.userip", 
+    "fields": {
+      "ip": "127.0.0.1", 
+      "user": 1
     }
   }
 ]

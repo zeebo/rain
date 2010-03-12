@@ -1,4 +1,4 @@
-from rain.tracker.models import Torrent, Peer
+from rain.tracker.models import Torrent, Peer, UserIP, RatioInfo, UserRatio
 from tracker.forms import UploadTorrentForm, PeerForm
 from django.contrib import admin
 from django import forms
@@ -49,5 +49,17 @@ class PeerAdmin(ReadOnlyModelAdmin):
   form = PeerForm
   list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
 
+class UserIPAdmin(admin.ModelAdmin):
+  list_display = ('user', 'ip')
+
+class RatioInfoAdmin(ReadOnlyModelAdmin):
+  list_display = ('user', 'torrent', 'download_size', 'upload_size', 'ratio')
+
+class UserRatioAdmin(admin.ModelAdmin):
+  list_display = ('user', 'download_size', 'upload_size', 'ratio')
+
+admin.site.register(UserIP, UserIPAdmin)
+admin.site.register(RatioInfo, RatioInfoAdmin)
+admin.site.register(UserRatio, UserRatioAdmin)
 admin.site.register(Torrent, TorrentAdmin)
 admin.site.register(Peer, PeerAdmin)
