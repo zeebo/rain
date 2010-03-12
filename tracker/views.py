@@ -195,7 +195,7 @@ def get_matching_torrent(info_hash):
     return None, tracker_error_response('Problem with info_hash')
 
 def find_matching_peer(torrent, user_ip, port, key):
-  peer_query = current_peers().filter(torrent=torrent).filter(user_ip=user_ip).filter(port=port)
+  peer_query = Peer.objects.filter(torrent=torrent).filter(user_ip=user_ip).filter(port=port)
   if key is not None:
     peer_query = peer_query.filter(key=key)
   try:
