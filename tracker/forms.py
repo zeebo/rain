@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from tracker.models import Torrent
+from tracker.models import Torrent, Peer
 from rain.utils import bencode, bdecode
 from rain.settings import SECRET_KEY
 import hashlib
@@ -34,3 +34,15 @@ class UploadTorrentForm(forms.ModelForm):
     torrent.name = '%s.torrent' % hashlib.sha1(the_hash + SECRET_KEY).hexdigest()
     
     return torrent
+
+class PeerForm(forms.ModelForm):
+  class Meta:
+    model = Peer
+  
+  def clean_port(self):
+    port = self.cleaned_data['port']
+    
+    if port < 1 or port > 65535:
+      raise forms.ValidationError('Port not in the correct range')
+    
+    return port
