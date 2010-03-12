@@ -9,7 +9,7 @@ import os, hashlib, datetime, logging
 class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')
   uploaded_by = models.ForeignKey(User, default=User.objects.all()[0].pk)
-  info_hash = models.CharField(max_length=40, editable=False, unique=True, default='')
+  info_hash = models.CharField(max_length=40, editable=False, unique=True, default='info_hash not specified')
   downloaded = models.IntegerField(default=0)
   
   def __unicode__(self):
