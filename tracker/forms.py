@@ -6,10 +6,7 @@ from rain.settings import SECRET_KEY
 import hashlib
 import os
 
-class UploadTorrentForm(forms.ModelForm):
-  class Meta:
-    model = Torrent
-    fields = ("torrent",)
+class UploadTorrentBaseForm(forms.ModelForm):
   
   def clean_torrent(self):    
     torrent = self.cleaned_data["torrent"]
@@ -34,6 +31,15 @@ class UploadTorrentForm(forms.ModelForm):
     torrent.name = '%s.torrent' % hashlib.sha1(the_hash + SECRET_KEY).hexdigest()
     
     return torrent
+
+class UploadTorrentForm(UploadTorrentBaseForm):
+  class Meta:
+    model = Torrent
+    fields = ("torrent",)
+
+class UploadTorrentAdminForm(UploadTorrentBaseForm):
+  class Meta:
+    model = Torrent
 
 class PeerForm(forms.ModelForm):
   class Meta:
