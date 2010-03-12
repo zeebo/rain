@@ -42,17 +42,18 @@ def announce(request):
   peer, response = find_matching_peer(torrent=torrent, user_ip=user_ip, port=values['port'], key=values['key'])
   if response is not None:
     return response
+    
+  #Create an event handler and hand off the event to it.
+  handler = EventHandler()
+  peer, response = handler(values=values, user_ip=user_ip, torrent=torrent, peer=peer)
+  if response is not None:
+    return response
   
   #Update the ratio
   response = update_ratio(peer, torrent, values.get('amount_downloaded', None), values.get('amount_uploaded', None))
   if response is not None:
     return response
   
-  #Create an event handler and hand off the event to it.
-  handler = EventHandler()
-  peer, response = handler(values=values, user_ip=user_ip, torrent=torrent, peer=peer)
-  if response is not None:
-    return response
   
   #Find more peers on the same torrent that arent the current peer
   return generate_announce_response(values=values, torrent=torrent, peer=peer)  
@@ -69,23 +70,17 @@ def scrape(request):
 ###################################################################
 
 def get_user_from_ip(ip):
-  queryset = UserIP.objects.filter(ip=ip)
-  user_count = queryset.count()
-  if user_count > 1:
-    return None, tracker_error_response('Multiple users registered with that ip address. big trouble!')
-  if user_count == 0:
-    return None, tracker_error_response('Cant find your ip address. Please login then add the torrent')
-  
-  return queryset.get(), None
+  try:
+    return UserIP.objects.filter(ip=ip).get(), None
+  except (UserIP.MultipleObjectsReturned, UserIP.DoesNotExist):
+    return None, tracker_error_response('Problem authenticating against your ip address')
 
 def update_ratio(peer, torrent, downloaded, uploaded):
   if downloaded is None or uploaded is None:
     return tracker_error_response('Must pass downloaded/uploaded info')
   
   if peer is None:
-    if downloaded > 0 or uploaded > 0:
-      return tracker_error_response('Downloaded or uploaded before recorded as a peer')
-    return None
+    return tracker_error_response('Somehow managed to not get a peer')
   
   ratio_object, created = RatioInfo.objects.get_or_create(user=peer.user_ip.user, torrent=torrent)
   

@@ -10,11 +10,21 @@
     }
   }, 
   {
+    "pk": 2, 
+    "model": "tracker.torrent", 
+    "fields": {
+      "downloaded": 0, 
+      "torrent": "torrents/ybcr.torrent", 
+      "info_hash": "5800398c82f76c14ea5f37d94c8ed1379ce50cbd", 
+      "uploaded_by": 1
+    }
+  }, 
+  {
     "pk": 1, 
     "model": "tracker.userip", 
     "fields": {
       "ip": "127.0.0.1", 
       "user": 1
     }
-  }
+  } 
 ]
