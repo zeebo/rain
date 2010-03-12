@@ -20,9 +20,12 @@ class ReadOnlyWidget(forms.Widget):
 class ReadOnlyModelAdmin(admin.ModelAdmin):
   def get_form(self, request, obj=None, **kwargs):
     form = super(ReadOnlyModelAdmin, self).get_form(request, obj, **kwargs)
-    
+    import logging
     if obj is not None:
+      
       for field_name in form.base_fields:
+        if hasattr(self, 'editable_fields') and field_name in self.editable_fields:
+          continue
         # field with 'choices' attribute
         if hasattr(obj, 'get_%s_display' % field_name):
           original_value = getattr(obj, field_name, '')
@@ -35,16 +38,16 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
         else:
           original_value = getattr(obj, field_name, '')
           display_value = getattr(obj, field_name, '')
-      
+        
         form.base_fields[field_name].widget = ReadOnlyWidget(original_value, display_value)
         form.base_fields[field_name].required = False
       
     return form
 
-
 class TorrentAdmin(ReadOnlyModelAdmin):
   form = UploadTorrentAdminForm
   list_display = ('info_hash', 'uploaded_by', 'num_seeds', 'num_peers', 'downloaded')
+  editable_fields = ('uploaded_by', 'downloaded')
 
 class PeerAdmin(ReadOnlyModelAdmin):
   form = PeerForm
