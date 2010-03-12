@@ -8,8 +8,8 @@ import os, hashlib, datetime, logging
 
 class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')
-  uploaded_by = models.ForeignKey(User)
-  info_hash = models.CharField(max_length=40, editable=False, unique=True)
+  uploaded_by = models.ForeignKey(User, default=User.objects.all()[0].pk)
+  info_hash = models.CharField(max_length=40, editable=False, unique=True, default='')
   downloaded = models.IntegerField(default=0)
   
   def __unicode__(self):
@@ -22,18 +22,25 @@ class Torrent(models.Model):
     return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['peer']).count()
   
   def torrent_data(self):
+    self.torrent.seek(0)
     return_data = self.torrent.read()
     self.torrent.seek(0)
+    
     return return_data
   
   def set_info_hash(self):
-    self.torrent.seek(0)
-    data = bdecode(self.torrent.read())
+    data = bdecode(self.torrent_data())
     self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
     
   def increment_downloaded(self):
     self.downloaded += 1
     self.save()
+  
+  def save(self, *args, **kwargs):
+    if self.info_hash == '':
+      self.set_info_hash()
+    
+    super(Torrent, self).save(*args, **kwargs)
 
 class Peer(models.Model):
   STATE_CHOICES = (

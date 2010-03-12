@@ -1,13 +1,12 @@
 from django import forms
 from django.contrib.auth.models import User
 from tracker.models import Torrent
-from utils import bencode, bdecode
+from rain.utils import bencode, bdecode
+from rain.settings import SECRET_KEY
 import hashlib
 import os
 
 class UploadTorrentForm(forms.ModelForm):
-  torrent = forms.FileField(label="Torrent")
-  
   class Meta:
     model = Torrent
     fields = ("torrent",)
@@ -27,8 +26,11 @@ class UploadTorrentForm(forms.ModelForm):
       raise forms.ValidationError('Info dict not in torrent file')
     
     #Verify uniqueness
-    the_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
+    the_hash = hashlib.sha1(bencode(data['info'])).hexdigest()
     if Torrent.objects.filter(info_hash=the_hash).count() != 0:
       raise forms.ValidationError('Torrent already exists [%s]' % the_hash)
+    
+    #encode the name
+    torrent.name = '%s.torrent' % hashlib.sha1(the_hash + SECRET_KEY).hexdigest()
     
     return torrent
