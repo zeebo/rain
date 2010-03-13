@@ -64,6 +64,9 @@ class Peer(models.Model):
   def ip_port(self):
     return "%s:%s" % (self.user_ip.ip, self.port)
   
+  def username(self):
+    return self.user_ip.user.username
+  
   def active(self):
     delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
     return self.last_announce >= datetime.datetime.now() - delta
@@ -76,6 +79,9 @@ class Peer(models.Model):
 class UserIP(models.Model):
   user = models.ForeignKey(User)
   ip = models.IPAddressField(unique=True)
+  
+  def __unicode__(self):
+    return "%s [%s]" % (self.user.username, self.ip)
 
 class RatioModel(models.Model):
   downloaded = models.IntegerField(default=0)
