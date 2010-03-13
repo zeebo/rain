@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from rain.tracker.models import Torrent, Peer, current_peers, UserIP, RatioInfo, UserRatio
 from rain.tracker.forms import UploadTorrentForm
@@ -12,11 +13,14 @@ import ipaddr
 import datetime
 import hashlib
 
+@login_required
 def upload_torrent(request):
   if request.method == 'POST':
     form = UploadTorrentForm(request.POST, request.FILES)
     if form.is_valid():
-      form.save()
+      new_torrent = form.save(commit=False)
+      new_torrent.uploaded_by = request.user
+      new_torrent.save()
       return HttpResponse('Got the file')
   else:
     form = UploadTorrentForm()
