@@ -37,7 +37,7 @@ class Torrent(models.Model):
     self.save()
   
   def save(self, *args, **kwargs):
-    if self.info_hash == '':
+    if self.info_hash == 'info_hash not specified':
       self.set_info_hash()
     
     super(Torrent, self).save(*args, **kwargs)
