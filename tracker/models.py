@@ -77,7 +77,7 @@ class Peer(models.Model):
 
 #Class to map ip addresses to user.
 class UserIP(models.Model):
-  user = models.ForeignKey(User)
+  user = models.ForeignKey(User, blank=True, null=True)
   ip = models.IPAddressField(unique=True)
   
   def __unicode__(self):
