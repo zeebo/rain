@@ -20,7 +20,6 @@ class ReadOnlyWidget(forms.Widget):
 class ReadOnlyModelAdmin(admin.ModelAdmin):
   def get_form(self, request, obj=None, **kwargs):
     form = super(ReadOnlyModelAdmin, self).get_form(request, obj, **kwargs)
-    import logging
     if obj is not None:
       
       for field_name in form.base_fields:
@@ -51,7 +50,7 @@ class TorrentAdmin(ReadOnlyModelAdmin):
 
 class PeerAdmin(ReadOnlyModelAdmin):
   form = PeerForm
-  list_display = ('torrent', 'peer_id', 'ip_port', 'key', 'state', 'last_announce', 'active')
+  list_display = ('torrent', 'peer_id', 'username', 'ip_port', 'key', 'state', 'last_announce', 'active')
 
 class UserIPAdmin(admin.ModelAdmin):
   list_display = ('user', 'ip')
