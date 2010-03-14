@@ -1,5 +1,5 @@
 from rain.tracker.models import Torrent, Peer, UserIP, RatioInfo, UserRatio
-from tracker.forms import UploadTorrentAdminForm, PeerForm
+from rain.tracker.forms import UploadTorrentAdminForm, PeerForm
 from django.contrib import admin
 from django import forms
 

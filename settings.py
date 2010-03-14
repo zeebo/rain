@@ -60,7 +60,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'tracker.middleware.UpdateUserIPMiddleware',
+    'rain.tracker.middleware.UpdateUserIPMiddleware',
 )
 
 ROOT_URLCONF = 'rain.urls'

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from tracker.models import Torrent, Peer
+from rain.tracker.models import Torrent, Peer
 from rain.utils import bencode, bdecode
 from rain.settings import SECRET_KEY
 import hashlib

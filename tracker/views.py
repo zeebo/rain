@@ -7,9 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from rain.tracker.models import Torrent, Peer, current_peers, UserIP, RatioInfo, UserRatio
 from rain.tracker.forms import UploadTorrentForm
-from rain import utils
+from rain import utils, ipaddr
 from rain.settings import MAGIC_VALUES
-import ipaddr
 import datetime
 import hashlib
 
