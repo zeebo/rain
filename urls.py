@@ -15,6 +15,6 @@ urlpatterns = patterns('',
   (r'^tracker/', include(tracker_views)),
   (r'^accounts/login/$', 'django.contrib.auth.views.login'),
   (r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
-  (r'^accounts/register/$', 'invite_registration.registration_view'),
+  (r'^accounts/register/$', 'invite_registration.views.registration_view'),
   #(r'^tracker/media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}), #probably security vuln but ok for now.
 )
