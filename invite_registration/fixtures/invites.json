@@ -1,0 +1,32 @@
+[
+  {
+    "pk": 1, 
+    "model": "invite_registration.invite", 
+    "fields": {
+      "owner": 1, 
+      "active": true, 
+      "hash_code": "147037894a14f44e671ed54943ff09976a4c17f5", 
+      "child": null
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "invite_registration.invite", 
+    "fields": {
+      "owner": 2, 
+      "active": true, 
+      "hash_code": "ba130a1044f5691ff161df941db99fe796460438", 
+      "child": null
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "invite_registration.invite", 
+    "fields": {
+      "owner": 1, 
+      "active": false, 
+      "hash_code": "a024097620dad62218b7b8351c0e659618f57189", 
+      "child": 2
+    }
+  }
+]

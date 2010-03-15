@@ -1,7 +1,15 @@
+import string
+from rain.tracker.models import Torrent, Peer, current_peers, UserIP, RatioInfo, UserRatio
+from django.template import RequestContext
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from rain.tracker import ipaddr
+from rain.settings import MAGIC_VALUES
+from django.http import HttpResponse
+import datetime
+import hashlib
 import unittest
 import random
-import string
-
 
 def bencode(data):
   if isinstance(data, int):
@@ -71,113 +79,224 @@ def bdecode(data):
     raise ValueError('Extra data')
   return root
 
-class TestBencode(unittest.TestCase):
-  def test_int(self):
-    self.assertEqual(bencode(1), 'i1e')
-    self.assertEqual(bencode(1832), 'i1832e')
-    
-    self.assertEqual(bencode(3), 'i3e')
-    
-  def test_str(self):
-    self.assertEqual(bencode('abc'), '3:abc')
-    self.assertEqual(bencode('aasdfbc'), '7:aasdfbc')
-    
-    self.assertEqual(bencode('spam'), '4:spam')
-  
-  def test_list(self):
-    self.assertEqual(bencode(['a', 'c', 'e']), 'l1:a1:c1:ee')
-    self.assertEqual(bencode([1,2,3]), 'li1ei2ei3ee')
-    self.assertEqual(bencode([1,'a',3]), 'li1e1:ai3ee')
-    self.assertEqual(bencode([[1,2],['a','b']]), 'lli1ei2eel1:a1:bee')
-    
-    self.assertEqual(bencode(['spam', 'eggs']), 'l4:spam4:eggse')
-    
-  def test_dict(self):
-    self.assertEqual(bencode({'a':2}), 'd1:ai2ee')
-    self.assertEqual(bencode({'b':[1,2]}), 'd1:bli1ei2eee')
-    
-    self.assertEqual(bencode({'cow':'moo', 'spam':'eggs'}), 'd3:cow3:moo4:spam4:eggse')
-    self.assertEqual(bencode({'spam':['a', 'b']}), 'd4:spaml1:a1:bee')
-    self.assertEqual(bencode({"publisher":"bob", "publisher-webpage":"www.example.com", "publisher.location":"home" }), 'd9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee')
-    
-  def test_dict_sorting(self):
-    self.assertEqual(bencode({'a':1,'c':10,'b':5}), 'd1:ai1e1:bi5e1:ci10ee')
-  
-  def test_other(self):
-    self.assertRaises(TypeError, bencode, self)
 
-class TestBdecode(unittest.TestCase):
-  def test_int(self):
-    self.assertEqual(1, bdecode('i1e'))
-    self.assertEqual(1832, bdecode('i1832e'))
-    
-    self.assertEqual(3, bdecode('i3e'))
-    
-  def test_str(self):
-    self.assertEqual('abc', bdecode('3:abc'))
-    self.assertEqual('aasdfbc', bdecode('7:aasdfbc'))
-    
-    self.assertEqual('spam', bdecode('4:spam'))
-  
-  def test_list(self):
-    self.assertEqual(['a', 'c', 'e'], bdecode('l1:a1:c1:ee'))
-    self.assertEqual([1,2,3], bdecode('li1ei2ei3ee'))
-    self.assertEqual([1,'a',3], bdecode('li1e1:ai3ee'))
-    self.assertEqual([[1,2],['a','b']], bdecode('lli1ei2eel1:a1:bee'))
-    
-    self.assertEqual(['spam', 'eggs'], bdecode('l4:spam4:eggse'))
-    
-  def test_dict(self):
-    self.assertEqual({'a':2}, bdecode('d1:ai2ee'))
-    self.assertEqual({'b':[1,2]}, bdecode('d1:bli1ei2eee'))
-    
-    self.assertEqual({'cow':'moo', 'spam':'eggs'}, bdecode('d3:cow3:moo4:spam4:eggse'))
-    self.assertEqual({'spam':['a', 'b']}, bdecode('d4:spaml1:a1:bee'))
-    self.assertEqual({'publisher':'bob', 'publisher-webpage':'www.example.com', 'publisher.location':'home' }, bdecode('d9:publisher3:bob17:publisher-webpage15:www.example.com18:publisher.location4:homee'))
-  
-  def test_invalid(self):
-    self.assertRaises(ValueError, bdecode, '3:af')
-    self.assertRaises(ValueError, bdecode, '3:afeh')
-    self.assertRaises(ValueError, bdecode, '3:afed')
-    self.assertRaises(ValueError, bdecode, 'iabce')
-    self.assertRaises(ValueError, bdecode, 'i1')
-    self.assertRaises(ValueError, bdecode, 'lrofle')
-    self.assertRaises(ValueError, bdecode, 'di1e3:lole')
-    self.assertRaises(ValueError, bdecode, 'what the fuck')
-  
-  def test_other(self):
-    self.assertRaises(TypeError, bdecode, self)
-  
-  def test_empty(self):
-    self.assertRaises(ValueError, bdecode, '')
+def get_user_from_ip(ip):
+  try:
+    return UserIP.objects.filter(ip=ip).get(), None
+  except (UserIP.MultipleObjectsReturned, UserIP.DoesNotExist):
+    return None, tracker_error_response('Problem authenticating against your ip address')
 
+def update_ratio(peer, torrent, downloaded, uploaded):
+  if downloaded is None or uploaded is None:
+    return tracker_error_response('Must pass downloaded/uploaded info')
+  
+  if peer is None:
+    return tracker_error_response('Somehow managed to not get a peer')
+  
+  ratio_object, created = RatioInfo.objects.get_or_create(user=peer.user_ip.user, torrent=torrent)
+  
+  delta_download = downloaded - ratio_object.downloaded
+  delta_uploaded = uploaded - ratio_object.uploaded
+  
+  if delta_uploaded < 0 or delta_download < 0:
+    return tracker_error_response('Downloaded/uploaded info went backwards. uh oh.')
+  
+  ratio_object.downloaded = downloaded
+  ratio_object.uploaded = uploaded
+  
+  user_ratio_object, created = UserRatio.objects.get_or_create(user=peer.user_ip.user)
+  
+  user_ratio_object.downloaded += delta_download
+  user_ratio_object.uploaded += delta_uploaded
+  
+  ratio_object.save()
+  user_ratio_object.save()
+  
+  return None
 
-class TestReciprical(unittest.TestCase):
-  def rand_str(self, recursion):
-    return ''.join((random.choice(string.ascii_letters) for x in xrange(random.randint(1,30))))
-  def rand_int(self, recursion):
-    return random.randint(1,1000000)
-  def rand_list(self, recursion=3):
-    return_list = []
-    for x in xrange(random.randint(1,10)):
-      return_list.append(self.rand_element(recursion - 1))
-    return return_list
-  def rand_dict(self, recursion=3):
-    return_dict = {}
-    for x in xrange(random.randint(1,10)):
-      return_dict[self.rand_str(recursion)] = self.rand_element(recursion - 1)
-    return return_dict
-  def rand_element(self, recursion=3):
-    if recursion == 0:
-      functions = (self.rand_str, self.rand_int)
+def tracker_error_response(value):
+  return HttpResponse(bencode({'failure reason': "Error: %s" % value}), mimetype='text/plain')
+
+def tracker_response(value):
+  return HttpResponse(bencode(value), mimetype='text/plain')
+
+def get_cleaned_hashes(request):
+  request.encoding = 'iso-8859-1'
+  hash_list = []
+  for dirty_hash in request.GET.getlist('info_hash'):
+    clean_hash, response = clean_info_hash(dirty_hash)
+    if response is not None:
+      return None, response
+    
+    hash_list.append(clean_hash)
+  
+  if hash_list == []:
+    return None, tracker_error_response('No info_hashes specified')
+  
+  return hash_list, None
+
+def clean_info_hash(dirty_hash):
+  try:
+    return dirty_hash.encode('iso-8859-1').encode('hex'), None
+  except AttributeError:
+    return None, tracker_error_response('Invalid info_hash')
+
+def parse_request(request):
+  values = {}
+  request.encoding = 'iso-8859-1'
+    
+  #Get the interesting values from the request
+  values['info_hash'], response = clean_info_hash(request.GET.get('info_hash', None))
+  if response is not None:
+    return None, response
+  
+  values['peer_id'] = request.GET.get('peer_id', None)
+  values['ip'] = request.META.get('REMOTE_ADDR') #ignore any sent ip address
+  values['key'] = request.GET.get('key', None)
+  values['event'] = request.GET.get('event', 'update')
+  
+  #These are integer values and require special handling
+  try:
+    values['port'] = int(request.GET.get('port', None))
+    values['amount_left'] = int(request.GET.get('left', None))
+    values['amount_downloaded'] = int(request.GET.get('downloaded', None))
+    values['amount_uploaded'] = int(request.GET.get('uploaded', None))
+    
+    #Default values for parameters that arent required
+    values['numwant'] = int(request.GET.get('numwant', MAGIC_VALUES['numwant_default']))
+    values['compact'] = int(request.GET.get('compact', MAGIC_VALUES['compact_default']))
+  except ValueError:
+    return None, tracker_error_response('error parsing integer field')
+  except TypeError:
+    return None, tracker_error_response('missing value for required field')
+  
+  return values, check_request_sanity(values)
+
+def check_request_sanity(values):
+  if not 0 < values['port'] < 65536:
+    return tracker_error_response('invalid port')  
+  if not values['amount_left'] >= 0:
+    return tracker_error_response('invalid amount remaining')  
+  if not values['amount_downloaded'] >= 0:
+    return tracker_error_response('invalid downloaded amount')  
+  if not values['amount_uploaded'] >= 0:
+    return tracker_error_response('invalid uploaded amount')  
+  if values['compact'] not in (0, 1):
+    return tracker_error_response('compact must be 0 or 1')  
+  if not values['numwant'] >= 0:
+    return tracker_error_response('invalid number of peers requested')  
+  if values['event'] not in ('started', 'completed', 'stopped', 'update'):
+    return tracker_error_response('invalid event')
+  if values['peer_id'] is None:
+    return tracker_error_response('peer id required')
+  
+  #all the data is good!
+  return None
+
+def peerset_to_ip(queryset, compact=1):
+  if compact:
+    return ''.join("%s%s%s" % (ipaddr.IPAddress(peer.user_ip.ip).packed, chr(peer.port//256), chr(peer.port%256)) for peer in queryset)
+  else:
+    return [{'peer id': peer.peer_id, 'ip': peer.user_ip.ip, 'port': peer.port} for peer in queryset]
+
+def get_matching_torrent(info_hash):
+  try:
+    return Torrent.objects.filter(info_hash=info_hash).get(), None
+  except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
+    return None, tracker_error_response('Problem with info_hash')
+
+def find_matching_peer(torrent, user_ip, port, key):
+  peer_query = Peer.objects.filter(torrent=torrent).filter(user_ip=user_ip).filter(port=port)
+  if key is not None:
+    peer_query = peer_query.filter(key=key)
+  try:
+    return peer_query.get(), None
+  except Peer.MultipleObjectsReturned:
+    return None, tracker_error_response('Multiple peers match that torrent/ip/port/key combination')
+  except Peer.DoesNotExist:
+    return None, None
+
+class EventHandler(object):
+  def __call__(self, **kwargs):
+    
+    #Update the peer if it exists to update last_announce
+    if kwargs['peer'] is not None:
+      kwargs['peer'].save()
+    
+    return getattr(self, 'handle_%s' % kwargs['values']['event'])(**kwargs)
+    
+  def handle_started(self, values, user_ip, torrent, peer):
+    if peer is not None:
+      return None, tracker_error_response('You are already on this torrent')
+    
+    new_peer = Peer(torrent=torrent, peer_id=values['peer_id'], port=values['port'], user_ip=user_ip, key=values['key'])
+    if values['amount_left'] == 0:
+      new_peer.state = MAGIC_VALUES['seed']
     else:
-      functions = (self.rand_str, self.rand_int, self.rand_dict, self.rand_list)
-    return random.choice(functions)(recursion)
+      new_peer.state = MAGIC_VALUES['peer']
+    
+    new_peer.save()
+    
+    return new_peer, None
   
-  def test_reciprical(self):
-    for i in xrange(100):
-      element = self.rand_element()
-      self.assertEqual(bdecode(bencode(element)), element)
+  def handle_completed(self, values, user_ip, torrent, peer):
+    if peer is None:
+      return None, tracker_error_response('Cant find which peer you are')
+    
+    peer.state = MAGIC_VALUES['seed']
+    peer.torrent.increment_downloaded()
+    peer.save()
+    
+    return peer, HttpResponse('', mimetype='text/plain')
+  
+  def handle_stopped(self, values, user_ip, torrent, peer):
+    if peer is None:
+      return None, tracker_error_response('Cant find which peer you are')
+    
+    peer.delete()
+    
+    return None, HttpResponse('', mimetype='text/plain')
+  
+  def handle_update(self, values, user_ip, torrent, peer):
+    if peer is None:
+      return None, tracker_error_response('Cant find which peer you are')
+    
+    if values['amount_left'] == 0:
+      peer.state = MAGIC_VALUES['seed']
+      peer.save()
+    
+    return peer, None
 
-if __name__ == '__main__':
-  unittest.main()
+def generate_announce_response(values, torrent, peer):
+  peer_list = current_peers().filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
+  num_peers = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['peer']).count()
+  num_seeds = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['seed']).count()
+  
+  if peer.state == MAGIC_VALUES['seed']:
+    interval = MAGIC_VALUES['seed_interval']
+  else:
+    interval = MAGIC_VALUES['peer_interval']
+  
+  return tracker_response({
+    'interval': interval,
+    'complete': num_seeds,
+    'incomplete': num_peers,
+    'peers': peerset_to_ip(peer_list[:values['numwant']], values['compact']),
+  })
+
+def generate_scrape_response(hashes):
+  response_dict = {'files' : {}}
+  
+  for a_hash in hashes:
+    torrent, response = get_matching_torrent(info_hash=a_hash)
+    if response is not None:
+      return response
+    
+    response_dict['files'][a_hash] = {
+      'complete' : torrent.num_seeds(),
+      'downloaded' : torrent.downloaded,
+      'incomplete' : torrent.num_peers()
+    }
+  
+  return tracker_response(response_dict)
+

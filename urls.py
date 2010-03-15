@@ -1,18 +1,12 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-from rain.tracker.views import announce, scrape, upload_torrent
+from rain import tracker
 from rain.settings import MEDIA_ROOT
 admin.autodiscover()
 
-tracker_views = patterns('rain.tracker.views',
-  (r'announce$', 'announce'),
-  (r'scrape$', 'scrape'),
-  (r'upload_torrent$', 'upload_torrent'),
-)
-
 urlpatterns = patterns('',
   (r'^admin/', include(admin.site.urls)),
-  (r'^tracker/', include(tracker_views)),
+  (r'^tracker/', include(tracker.urls.urlpatterns)),
   (r'^accounts/login/$', 'django.contrib.auth.views.login'),
   (r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
   (r'^accounts/register/$', 'invite_registration.views.registration_view'),
