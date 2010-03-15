@@ -196,6 +196,7 @@ class AnnounceTest(MyTestCase):
 
 class ScrapeTest(TestCase):
   fixtures = ['a_torrent.json', 'a_user.json']
+  urls = 'rain.tracker.urls'
   
   def test_scrape(self):
     response = self.client.get('/tracker/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')
