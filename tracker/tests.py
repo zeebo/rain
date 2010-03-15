@@ -24,7 +24,7 @@ class MyTestCase(TestCase):
     if extra_params is None:
       extra_params = {}
     
-    return self.client.get('/announce?%s' % '&'.join(['%s=%s' % (k, local_settings[k]) for k in local_settings]), **extra_params)
+    return self.client.get('/tracker/announce?%s' % '&'.join(['%s=%s' % (k, local_settings[k]) for k in local_settings]), **extra_params)
   
   def check_invalid_argument(self, invalid_args):
     for name, value in invalid_args:
@@ -196,21 +196,21 @@ class ScrapeTest(TestCase):
   fixtures = ['a_torrent.json', 'a_user.json']
   
   def test_scrape(self):
-    response = self.client.get('/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')
+    response = self.client.get('/tracker/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')
     self.assertNotContains(response, 'Error: ', status_code=200)
     
-    response = self.client.get('/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')
+    response = self.client.get('/tracker/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')
     self.assertNotContains(response, 'Error: ', status_code=200)
   
   def test_invalid_hash(self):
-    response = self.client.get('/scrape?info_hash=bad_hash')
+    response = self.client.get('/tracker/scrape?info_hash=bad_hash')
     self.assertContains(response, 'Error: ', status_code=200)
     
-    response = self.client.get('/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=bad_hash')
+    response = self.client.get('/tracker/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b&info_hash=bad_hash')
     self.assertContains(response, 'Error: ', status_code=200)
     
   def test_blank_hash(self):
-    response = self.client.get('/scrape')
+    response = self.client.get('/tracker/scrape')
     self.assertContains(response, 'Error: ', status_code=200)
 
     
