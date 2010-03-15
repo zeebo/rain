@@ -1,7 +1,7 @@
 [
   {
     "pk": 1, 
-    "model": "tracker.torrent", 
+    "model": "torrents.torrent", 
     "fields": {
       "downloaded": 0, 
       "torrent": "torrents/midterm__.torrent", 
@@ -11,7 +11,7 @@
   }, 
   {
     "pk": 2, 
-    "model": "tracker.torrent", 
+    "model": "torrents.torrent", 
     "fields": {
       "downloaded": 0, 
       "torrent": "torrents/ybcr.torrent", 

@@ -1,5 +1,6 @@
 import string
-from rain.tracker.models import Torrent, Peer, current_peers, UserIP, RatioInfo, UserRatio
+from rain.tracker.models import Peer, current_peers, UserIP, RatioInfo, UserRatio
+from rain.torrents.models import Torrent
 from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError

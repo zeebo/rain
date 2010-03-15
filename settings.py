@@ -79,6 +79,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.admin',
+    'rain.torrents',
     'rain.tracker',
     'rain.invite_registration',
 )

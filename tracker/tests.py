@@ -1,9 +1,10 @@
 from django.test import TestCase
-from rain.tracker.models import Peer, Torrent, RatioInfo, UserRatio
+from rain.tracker.models import Peer, RatioInfo, UserRatio
+from rain.tracker.utils import bencode, bdecode
+from rain.torrents.models import Torrent
+import string
 import unittest
 import random
-from rain.tracker.utils import bencode, bdecode
-import string
 
 class MyTestCase(TestCase):
   urls = 'tracker.urls'

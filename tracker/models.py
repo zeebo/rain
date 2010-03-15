@@ -1,46 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib import admin
-from rain.utils import bencode, bdecode
 from rain.settings import SECRET_KEY, MAGIC_VALUES
 from django.core.exceptions import ValidationError
+from rain.torrents.models import Torrent
 import os, hashlib, datetime, logging
-
-class Torrent(models.Model):
-  torrent = models.FileField(upload_to='torrents')
-  uploaded_by = models.ForeignKey(User, default=User.objects.all()[0].pk)
-  info_hash = models.CharField(max_length=40, editable=False, unique=True, default='info_hash not specified')
-  downloaded = models.IntegerField(default=0)
-  
-  def __unicode__(self):
-    return self.info_hash
-  
-  def num_seeds(self):
-    return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['seed']).count()
-  
-  def num_peers(self):
-    return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['peer']).count()
-  
-  def torrent_data(self):
-    self.torrent.seek(0)
-    return_data = self.torrent.read()
-    self.torrent.seek(0)
-    
-    return return_data
-  
-  def set_info_hash(self):
-    data = bdecode(self.torrent_data())
-    self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
-    
-  def increment_downloaded(self):
-    self.downloaded += 1
-    self.save()
-  
-  def save(self, *args, **kwargs):
-    if self.info_hash == 'info_hash not specified':
-      self.set_info_hash()
-    
-    super(Torrent, self).save(*args, **kwargs)
 
 class Peer(models.Model):
   STATE_CHOICES = (
@@ -73,6 +37,10 @@ class Peer(models.Model):
   
   def inactive(self):
     return not self.active()
+
+def current_peers():
+  delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
+  return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
 
 
 #Class to map ip addresses to user.
@@ -120,7 +88,3 @@ class RatioInfo(RatioModel):
 #Maps the total downloaded and uploaded to a user uniquely (updated automatically)
 class UserRatio(RatioModel):
   user = models.OneToOneField(User)
-
-def current_peers():
-  delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
-  return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
