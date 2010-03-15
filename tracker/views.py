@@ -12,6 +12,8 @@ from rain.settings import MAGIC_VALUES
 import datetime
 import hashlib
 
+
+
 @login_required
 def upload_torrent(request):
   if request.method == 'POST':
@@ -24,6 +26,9 @@ def upload_torrent(request):
   else:
     form = UploadTorrentForm()
   return render_to_response('tracker/upload_torrent.html', {'form': form}, context_instance=RequestContext(request))
+
+#from rain.profiler import profile
+#@profile('announce.prof')
 
 def announce(request):
   #Parse the request and return any errors
