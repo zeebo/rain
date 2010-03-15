@@ -10,6 +10,8 @@ class Torrent(models.Model):
   info_hash = models.CharField(max_length=40, editable=False, unique=True, default='info_hash not specified')
   downloaded = models.IntegerField(default=0)
   
+  description = models.TextField()
+  
   def get_absolute_url(self):
     return '/torrents/%d/' % self.pk
   

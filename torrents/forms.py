@@ -35,7 +35,7 @@ class UploadTorrentBaseForm(forms.ModelForm):
 class UploadTorrentForm(UploadTorrentBaseForm):
   class Meta:
     model = Torrent
-    fields = ("torrent",)
+    fields = ("torrent", "description")
 
 class UploadTorrentAdminForm(UploadTorrentBaseForm):
   class Meta:
