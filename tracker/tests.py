@@ -6,7 +6,7 @@ from rain.tracker.utils import bencode, bdecode
 import string
 
 class MyTestCase(TestCase):
-  urls = 'rain.tracker.urls'
+  urls = 'tracker.urls'
   fixtures = ['a_torrent.json', 'a_user.json']
   
   def make_request(self, info_hash='%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b',
@@ -196,7 +196,7 @@ class AnnounceTest(MyTestCase):
 
 class ScrapeTest(TestCase):
   fixtures = ['a_torrent.json', 'a_user.json']
-  urls = 'rain.tracker.urls'
+  urls = 'tracker.urls'
   
   def test_scrape(self):
     response = self.client.get('/tracker/scrape?info_hash=%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b')

@@ -25,6 +25,6 @@ class RegistrationForm(forms.Form):
     password_again = cleaned_data.get('password_again', None)
     
     if password != password_again:
-      return forms.ValidationError('Passwords dont match')
+      raise forms.ValidationError('Passwords dont match')
     
     return cleaned_data

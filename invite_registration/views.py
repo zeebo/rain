@@ -7,10 +7,10 @@ from forms import RegistrationForm
 
 def registration_view(request):
   hash_code = request.GET.get('code', None)
-  invite = get_object_or_404(Invite, hash_code=hash_code)
-  
-  if not invite.active:
-    raise Http404
+  try:
+    invite = Invite.objects.filter(active=True).get(hash_code=hash_code)
+  except Invite.DoesNotExist:
+    return HttpResponse('invalid hash code')
   
   if request.method == 'POST':
     form = RegistrationForm(request.POST)
