@@ -1,7 +1,8 @@
-from rain.tracker.forms import UploadTorrentForm
+from rain.torrents.forms import UploadTorrentForm
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
+from django.template import RequestContext
 
 @login_required
 def upload_torrent(request):
