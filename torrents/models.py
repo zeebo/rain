@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from rain.settings import MAGIC_VALUES
+import hashlib
 #from rain.tracker.models import current_peers
 
 class Torrent(models.Model):
@@ -11,14 +13,6 @@ class Torrent(models.Model):
   def __unicode__(self):
     return self.info_hash
   
-  def num_seeds(self):
-    return 0
-    #return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['seed']).count()
-  
-  def num_peers(self):
-    return 0
-    #return current_peers().filter(torrent=self).filter(state=MAGIC_VALUES['peer']).count()
-  
   def torrent_data(self):
     self.torrent.seek(0)
     return_data = self.torrent.read()
@@ -27,6 +21,7 @@ class Torrent(models.Model):
     return return_data
   
   def set_info_hash(self):
+    from rain.torrents.utils import bencode, bdecode
     data = bdecode(self.torrent_data())
     self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
     

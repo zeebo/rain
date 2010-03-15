@@ -1,3 +1,4 @@
+from django.contrib import admin
 from rain.tracker.models import Peer, UserIP, RatioInfo, UserRatio
 from rain.tracker.forms import PeerForm
 from rain.admin import ReadOnlyModelAdmin

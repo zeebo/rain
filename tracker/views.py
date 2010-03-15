@@ -1,4 +1,5 @@
 from rain.tracker.utils import *
+from rain.torrents.utils import get_matching_torrent
 
 #from rain.profiler import profile
 #@profile('announce.prof')

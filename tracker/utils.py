@@ -1,85 +1,14 @@
 import string
 from rain.tracker.models import Peer, current_peers, UserIP, RatioInfo, UserRatio
-from rain.torrents.models import Torrent
 from django.template import RequestContext
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from rain.tracker import ipaddr
 from rain.settings import MAGIC_VALUES
+from rain.torrents.utils import bencode, bdecode
 from django.http import HttpResponse
 import datetime
 import hashlib
-import unittest
-import random
-
-def bencode(data):
-  if isinstance(data, int):
-    return "i%de" % data
-  if isinstance(data, str):
-    return "%d:%s" % (len(data), data)
-  if isinstance(data, list):
-    return "l%se" % ''.join(bencode(x) for x in data)
-  if isinstance(data, dict):
-    return "d%se" % ''.join('%s%s' % (bencode(x), bencode(data[x])) for x in sorted(data.keys()))
-  
-  raise TypeError
-
-def bdecode(data):
-  '''Main function to decode bencoded data'''
-  def _dechunk(chunks):
-    try:
-      item = chunks.pop()
-    except IndexError:
-      raise ValueError('Unexpected end of data')
-    
-    if (item == 'd'): 
-      item = chunks.pop()
-      h = {}
-      while (item != 'e'):
-        chunks.append(item)
-        if not chunks[-1].isdigit():
-          raise ValueError('Non numeric digit')
-        key = _dechunk(chunks)
-        h[key] = _dechunk(chunks)
-        item = chunks.pop()
-      return h
-    elif (item == 'l'):
-      item = chunks.pop()
-      list = []
-      while (item != 'e'):
-        chunks.append(item)
-        list.append(_dechunk(chunks))
-        item = chunks.pop()
-      return list
-    elif (item == 'i'):
-      item = chunks.pop()
-      num = ''
-      while (item != 'e'):
-        num  += item
-        item = chunks.pop()
-      return int(num)
-    elif item.isdigit():
-      num = ''
-      while item.isdigit():
-        num += item
-        item = chunks.pop()
-      line = ''
-      for i in range(1, int(num) + 1):
-        line += chunks.pop()
-      return line
-  
-  chunks = list(data)
-  chunks.reverse()
-  
-  try:
-    root = _dechunk(chunks)
-  except IndexError:
-    raise ValueError
-  
-  if len(chunks):
-    raise ValueError('Extra data')
-  return root
-
 
 def get_user_from_ip(ip):
   try:
@@ -200,12 +129,6 @@ def peerset_to_ip(queryset, compact=1):
   else:
     return [{'peer id': peer.peer_id, 'ip': peer.user_ip.ip, 'port': peer.port} for peer in queryset]
 
-def get_matching_torrent(info_hash):
-  try:
-    return Torrent.objects.filter(info_hash=info_hash).get(), None
-  except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
-    return None, tracker_error_response('Problem with info_hash')
-
 def find_matching_peer(torrent, user_ip, port, key):
   peer_query = Peer.objects.filter(torrent=torrent).filter(user_ip=user_ip).filter(port=port)
   if key is not None:
@@ -268,11 +191,15 @@ class EventHandler(object):
     
     return peer, None
 
+def num_seeds(torrent):
+  return current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['seed']).count()
+
+def num_peers(torrent):
+  return current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['peer']).count()
+
 def generate_announce_response(values, torrent, peer):
   peer_list = current_peers().filter(torrent=torrent).exclude(pk=peer.pk).order_by('-state')
-  num_peers = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['peer']).count()
-  num_seeds = current_peers().filter(torrent=torrent).filter(state=MAGIC_VALUES['seed']).count()
-  
+    
   if peer.state == MAGIC_VALUES['seed']:
     interval = MAGIC_VALUES['seed_interval']
   else:
@@ -280,12 +207,13 @@ def generate_announce_response(values, torrent, peer):
   
   return tracker_response({
     'interval': interval,
-    'complete': num_seeds,
-    'incomplete': num_peers,
+    'complete': num_seeds(torrent),
+    'incomplete': num_peers(torrent),
     'peers': peerset_to_ip(peer_list[:values['numwant']], values['compact']),
   })
 
 def generate_scrape_response(hashes):
+  from rain.torrents.utils import get_matching_torrent
   response_dict = {'files' : {}}
   
   for a_hash in hashes:
@@ -294,9 +222,9 @@ def generate_scrape_response(hashes):
       return response
     
     response_dict['files'][a_hash] = {
-      'complete' : torrent.num_seeds(),
+      'complete' : num_seeds(torrent),
       'downloaded' : torrent.downloaded,
-      'incomplete' : torrent.num_peers()
+      'incomplete' : num_peers(torrent)
     }
   
   return tracker_response(response_dict)

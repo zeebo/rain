@@ -1,16 +1,20 @@
 from django.contrib.auth.models import User
 from rain.torrents.models import Torrent
+from rain.torrents.utils import bencode, bdecode
 from rain.settings import SECRET_KEY
+from django import forms
 import hashlib
+import os
 
 class UploadTorrentBaseForm(forms.ModelForm):  
-  def clean_torrent(self):    
+  def clean_torrent(self):
     torrent = self.cleaned_data["torrent"]
     
     # Check that the torrent is actually a torrent file and set the info_hash
     _, ext = os.path.splitext(torrent.name)
     if ext != '.torrent':
       raise forms.ValidationError('File must end with .torrent')
+    
     try:
       data = bdecode(torrent.read())
     except ValueError:

@@ -2,9 +2,11 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib import admin
 from rain.settings import SECRET_KEY, MAGIC_VALUES
-from django.core.exceptions import ValidationError
 from rain.torrents.models import Torrent
-import os, hashlib, datetime, logging
+from django.core.exceptions import ValidationError
+import os
+import hashlib
+import datetime
 
 class Peer(models.Model):
   STATE_CHOICES = (
@@ -41,7 +43,6 @@ class Peer(models.Model):
 def current_peers():
   delta = datetime.timedelta(seconds=MAGIC_VALUES['time_until_inactive'])
   return Peer.objects.filter(last_announce__range=(datetime.datetime.now() - delta, datetime.datetime.now()))
-
 
 #Class to map ip addresses to user.
 class UserIP(models.Model):
