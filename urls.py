@@ -1,12 +1,11 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-from rain.tracker.urls import urlpatterns as tracker_urls
 from rain.settings import MEDIA_ROOT
 admin.autodiscover()
 
 urlpatterns = patterns('',
   (r'^admin/', include(admin.site.urls)),
-  (r'^tracker/', include(tracker_urls)),
+  (r'^tracker/', include('rain.tracker.urls')),
   (r'^accounts/login/$', 'django.contrib.auth.views.login'),
   (r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
   (r'^accounts/register/$', 'invite_registration.views.registration_view'),
