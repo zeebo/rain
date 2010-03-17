@@ -59,7 +59,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'rain.tracker.middleware.UpdateUserIPMiddleware',
+    'rain.userip.middleware.UpdateUserIPMiddleware',
 )
 
 ROOT_URLCONF = 'rain.urls'
@@ -82,6 +82,8 @@ INSTALLED_APPS = (
     'rain.tracker',
     'rain.invite_registration',
     'rain.user_profiles',
+    'rain.userip',
+    'rain.ratio',
 )
 
 MAGIC_VALUES = {
