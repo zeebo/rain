@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+	<h2>Available Torrents</h2>
+	<table cellpadding="3" cellspacing="0" border="0">
+		<thead>
+			<tr>
+				<th>Info hash</th>
+				<th>Description</th>
+				<th>Downloads</th>
+				<th>Uploaded by</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for torrent in object_list %}
+			<tr class="{% cycle 'row1' 'row2' %}">
+				<td><a href="{{ torrent.get_absolute_url }}download">{{ torrent.info_hash }}</a></td>
+				<td>{{ torrent.description }}</td>
+				<td>{{ torrent.downloaded }}</td>
+				<td>{{ torrent.uploaded_by }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

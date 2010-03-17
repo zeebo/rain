@@ -1,6 +1,11 @@
-<h2>Login bro</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit">
-</form>
+{% extends "base.html" %}
+{% block content %}
+	<form method="post">
+		<fieldset>
+		    {% csrf_token %}
+			<legend>Login</legend>
+			{{ form.as_p }}
+			<p style="text-align:center;"><input type="submit" value="Login"></p>
+		</fieldset>
+	</form>
+{% endblock %}

@@ -10,7 +10,7 @@ def registration_view(request):
   try:
     invite = Invite.objects.filter(active=True).get(hash_code=hash_code)
   except Invite.DoesNotExist:
-    return HttpResponse('invalid hash code')
+    return render_to_response('invite_registration/invalid.html')
   
   if request.method == 'POST':
     form = RegistrationForm(request.POST)

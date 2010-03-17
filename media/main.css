@@ -1,0 +1,106 @@
+body {
+	background:url('/media/background.gif') repeat-x top left;
+	margin:0;
+}
+body, th, td, input, textarea {
+	color:#3B4346;
+	font:12px/16px "Droid Sans", sans-serif;
+}
+
+ul.errorlist {
+	margin: 0;
+	padding: 0;
+}
+ul.errorlist li {
+	text-align: center;
+	list-style-type: none;
+	color: #f00;
+}
+h1.mainerror {
+	text-align: center;
+	padding-top: 200px;
+}
+#header,
+#content {
+	clear:both;
+	margin:0 auto;
+	width:960px;
+}
+#content {
+	padding-top:1em;
+}
+#header {
+	color:#FFF;
+}
+#header a {
+	color:#FFF;
+	text-decoration:none;
+}
+#header a:hover {
+	text-decoration:underline;
+}
+#header h1 {
+	float:left;
+	font-size:18px;
+	font-weight:normal;
+	line-height:24px;
+	margin:0;
+}
+#header ul {
+	display:block;
+	float:right;
+	line-height:24px;
+	list-style:none;
+	margin:0;
+	padding:0;
+}
+#header ul li {
+	display:block;
+	float:left;
+	padding:0 1ex;
+}
+h2 {
+	color:#036;
+	font-size:20px;
+	font-weight:normal;
+	margin:0 0 1ex;
+}
+table {
+	border:1px solid #3B4346;
+	width:100%;
+}
+table thead th {
+	background:#7395B0;
+	border-bottom:1px solid #3B4346;
+	color:#FFF;
+	font-weight:bold;
+	text-align:left;
+}
+table tr.row1 td {
+	background:#FFF;
+}
+table tr.row2 td {
+	background:#F3F3F3;
+}
+form {
+	margin:0 auto;
+	width:256px;
+}
+form fieldset {
+	background:#FFF;
+	border:1px solid #3B4346;
+}
+form fieldset legend {
+	display:none;
+}
+form fieldset label {
+	display:block;
+	margin-top:1ex;
+}
+form fieldset input[type=text], form fieldset input[type=password] {
+	width:95%;
+}
+#footer {
+	text-align: right;
+	padding: 20px;
+}

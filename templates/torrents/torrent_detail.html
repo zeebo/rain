@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Details for torrent {{ object.info_hash }}</h2>
+<ul>
+    <li>Uploaded by: {{ object.uploaded_by }}</li>
+    <li>Completed Downloads: {{ object.downloaded }}</li>
+</ul>
+<p>{{ object.description }}</p>
+{% endblock %}

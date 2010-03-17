@@ -42,11 +42,10 @@ USE_I18N = True
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/amedia/'
 
-CURRENT_DOMAIN = 'localhost:8080' #zeeb.us.to
+CURRENT_DOMAIN = '192.168.1.73:8080' #zeeb.us.to
 MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media/')
-MEDIA_URL = 'http://%s/tracker/media/' % CURRENT_DOMAIN
+MEDIA_URL = 'http://%s/media/' % CURRENT_DOMAIN
 
-# Make this unique, and don't share it with anybody.
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
@@ -82,8 +81,8 @@ INSTALLED_APPS = (
     'rain.torrents',
     'rain.tracker',
     'rain.invite_registration',
+    'rain.user_profiles',
 )
-
 
 MAGIC_VALUES = {
   'time_until_inactive' : 30*60, #30 minutes
@@ -96,3 +95,5 @@ MAGIC_VALUES = {
   'seed' : 'S', 
   'peer' : 'P',
 }
+
+LOGIN_REDIRECT_URL = '/torrents/'

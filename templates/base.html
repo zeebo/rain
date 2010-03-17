@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+<title>lmao titles are for losers</title>
+<link rel="stylesheet" type="text/css" href="/media/main.css" />
+<style type="text/css">
+{% if not user.is_authenticated %}
+body {
+	background-position:0px -25px;
+}
+{% endif %}
+</style>
+</head>
+<body>
+{% if user.is_authenticated %}
+<div id="header">
+	<h1>Rain</h1>
+	<ul>
+		<li>Welcome, <strong><a href="{{ user.get_absolute_url }}">{{ user.username }}</a></strong></li>
+		<li><a href="{% url rain.torrents.views.torrent_list %}">Available Torrents</a></li>
+		<li><a href="/users/">Users</a></li>
+		<li><a href="{% url rain.torrents.views.upload_torrent %}">Upload Torrent</a></li>
+		<li><a href="{% url django.contrib.auth.views.logout %}">Logout</a></li>
+	</ul>
+</div>
+{% endif %}
+<div id="content">
+    {% block content %}
+    {% endblock %}
+</div>
+{% if user.is_authenticated %}
+<div id="footer">
+    <small>Powered by <a href="http://github.com/zeebo/rain">Rain</a>. Templates by Jake.</small>
+</div>
+{% endif %}
+</body>
+</html>

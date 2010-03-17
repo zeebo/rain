@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mainerror">Logged out. Later bro.</h1>
+<p style="text-align: center"><a href="{% url django.contrib.auth.views.login %}">Login again</a></p>
+{% endblock %}

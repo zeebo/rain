@@ -1,9 +1,14 @@
 from django.conf.urls.defaults import *
 from django.http import HttpResponse
+from rain.torrents.models import Torrent
+
+info_dict = {
+  'queryset': Torrent.objects.all(),
+}
 
 urlpatterns = patterns('',
-  (r'^$', lambda x: HttpResponse('niy')),
+  (r'^$', 'rain.torrents.views.torrent_list', info_dict),
   (r'^upload/$', 'rain.torrents.views.upload_torrent'),
-  (r'^(?P<torrent_id>\d+)/$', lambda x, torrent_id: HttpResponse('niy')),
+  (r'^(?P<object_id>\d+)/$', 'rain.torrents.views.torrent_detail', info_dict),
   (r'^(?P<torrent_id>\d+)/download$', lambda x, torrent_id: HttpResponse('niy')),
 )
