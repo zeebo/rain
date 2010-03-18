@@ -101,6 +101,6 @@ form fieldset input[type=text], form fieldset input[type=password] {
 	width:95%;
 }
 #footer {
-	text-align: right;
+	text-align: center;
 	padding: 20px;
 }

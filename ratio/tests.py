@@ -1,7 +1,8 @@
-from django import TestCase
+from django.test import TestCase
+from rain.ratio.models import RatioInfo, UserRatio
 
 class MyTestCase(TestCase):
-  urls = 'tracker.urls'
+  #urls = 'tracker.urls'
   fixtures = ['torrents.json', 'users.json']
   
   def make_request(self, info_hash='%eb%22%8c%08%6e%67%da%7f%5e%43%5e%f6%e4%75%7d%29%31%07%00%8b',
