@@ -1,4 +1,4 @@
-from rain.tracker.models import Peer
+from models import Peer
 from django.conf import settings
 
 def handle_started(values, user, peer):

@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 import hashlib
-#from rain.tracker.models import current_peers
 
 class Torrent(models.Model):
   torrent = models.FileField(upload_to='torrents')

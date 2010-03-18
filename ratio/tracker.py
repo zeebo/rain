@@ -1,4 +1,4 @@
-from rain.ratio.models import RatioInfo, UserRatio
+from models import RatioInfo, UserRatio
 
 def update_ratio(peer, user, info_hash, downloaded, uploaded):
   if downloaded is None or uploaded is None:

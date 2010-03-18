@@ -1,5 +1,5 @@
 from django import forms
-from rain.tracker.models import Peer
+from models import Peer
 
 class PeerForm(forms.ModelForm):
   class Meta:

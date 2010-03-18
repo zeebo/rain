@@ -1,4 +1,4 @@
-from rain.torrents.forms import UploadTorrentForm
+from forms import UploadTorrentForm
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext

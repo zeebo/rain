@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 from django.http import HttpResponse
-from rain.torrents.models import Torrent
+from models import Torrent
 
 info_dict = {
   'queryset': Torrent.objects.all(),

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from rain.ratio.models import RatioInfo, UserRatio
+from models import RatioInfo, UserRatio
 from rain.admin import ReadOnlyModelAdmin
 
 class RatioInfoAdmin(ReadOnlyModelAdmin):

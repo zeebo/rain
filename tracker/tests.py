@@ -1,5 +1,5 @@
 from django.test import TestCase
-from rain.tracker.models import Peer
+from models import Peer
 
 class MyTestCase(TestCase):
   urls = 'tracker.urls'

@@ -1,4 +1,4 @@
-from rain.tracker.utils import *
+from utils import *
 #from rain.profiler import profile
 #@profile('announce.prof')
 def announce(request):

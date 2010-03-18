@@ -1,4 +1,4 @@
-from rain.userip.models import UserIP
+from models import UserIP
 
 class UpdateUserIPMiddleware(object):
   def process_request(self, request):

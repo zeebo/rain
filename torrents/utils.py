@@ -1,4 +1,4 @@
-from rain.torrents.models import Torrent
+from models import Torrent
 
 def get_matching_torrent(info_hash):
   from rain.tracker.utils import tracker_error_response

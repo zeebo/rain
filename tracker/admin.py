@@ -1,6 +1,6 @@
 from django.contrib import admin
-from rain.tracker.models import Peer
-from rain.tracker.forms import PeerForm
+from models import Peer
+from forms import PeerForm
 from rain.admin import ReadOnlyModelAdmin
 
 class PeerAdmin(ReadOnlyModelAdmin):

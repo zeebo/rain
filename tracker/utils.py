@@ -1,4 +1,4 @@
-from rain.tracker.models import Peer, current_peers
+from models import Peer, current_peers
 from django.contrib.auth.models import User
 from rain import ipaddr
 from django.http import HttpResponse

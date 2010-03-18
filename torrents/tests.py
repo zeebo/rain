@@ -1,7 +1,7 @@
 import string
 import unittest
 import random
-from rain.torrents.utils import bencode, bdecode
+from utils import bencode, bdecode
 
 class BencodeTest(unittest.TestCase):
   def test_int(self):

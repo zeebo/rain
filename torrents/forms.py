@@ -1,5 +1,5 @@
-from rain.torrents.models import Torrent
-from rain.torrents.utils import bencode, bdecode
+from models import Torrent
+from utils import bencode, bdecode
 from django.conf import settings
 from django import forms
 import hashlib

@@ -1,4 +1,4 @@
-from rain.tracker.models import Torrent
+from models import Torrent
 
 def authorize_torrent(info_hash):
   if Torrent.objects.filter(info_hash=info_hash).exists():

@@ -1,6 +1,6 @@
-from rain.torrents.forms import UploadTorrentAdminForm
+from forms import UploadTorrentAdminForm
 from rain.admin import ReadOnlyModelAdmin
-from rain.torrents.models import Torrent
+from models import Torrent
 from django.contrib import admin
 
 class TorrentAdmin(ReadOnlyModelAdmin):

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from rain.ratio.models import RatioInfo, UserRatio
+from models import RatioInfo, UserRatio
 
 class MyTestCase(TestCase):
   #urls = 'tracker.urls'
