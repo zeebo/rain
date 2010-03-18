@@ -1,7 +1,7 @@
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import render_to_response
 from django.contrib.auth.models import User
 from django.template import RequestContext
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from models import Invite
 from forms import RegistrationForm
 

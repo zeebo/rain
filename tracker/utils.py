@@ -1,16 +1,10 @@
-import string
 from rain.tracker.models import Peer, current_peers
-from django.template import RequestContext
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from rain import ipaddr
-from rain.torrents.utils import bencode, bdecode
+from rain.torrents.utils import bencode
 from django.http import HttpResponse
 from django.conf import settings
 from django.utils.importlib import import_module
-import imp
-import datetime
-import hashlib
 
 def handle_events(values, user, peer):
   handler_function = 'handle_%s' % values['event']

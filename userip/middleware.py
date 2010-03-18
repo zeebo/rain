@@ -1,6 +1,4 @@
 from rain.userip.models import UserIP
-from django.contrib.auth.models import AnonymousUser
-from django.db import IntegrityError
 
 class UpdateUserIPMiddleware(object):
   def process_request(self, request):

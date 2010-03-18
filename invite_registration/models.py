@@ -1,11 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-import random, hashlib
-
-# Create your models here.
-
 
 def random_hash_code():
+  import random, hashlib
   return hashlib.sha1(str(random.getrandbits(40))).hexdigest()
 
 class Invite(models.Model):

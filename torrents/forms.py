@@ -1,7 +1,6 @@
-from django.contrib.auth.models import User
 from rain.torrents.models import Torrent
 from rain.torrents.utils import bencode, bdecode
-from rain.settings import SECRET_KEY
+from django.conf import settings
 from django import forms
 import hashlib
 import os
@@ -28,7 +27,7 @@ class UploadTorrentBaseForm(forms.ModelForm):
       raise forms.ValidationError('Torrent already exists [%s]' % the_hash)
     
     #encode the name
-    torrent.name = '%s.torrent' % hashlib.sha1(the_hash + SECRET_KEY).hexdigest()
+    torrent.name = '%s.torrent' % hashlib.sha1(the_hash + settings.SECRET_KEY).hexdigest()
     
     return torrent
 
