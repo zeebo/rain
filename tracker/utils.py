@@ -1,10 +1,20 @@
 from rain.tracker.models import Peer, current_peers
 from django.contrib.auth.models import User
 from rain import ipaddr
-from rain.torrents.utils import bencode
 from django.http import HttpResponse
 from django.conf import settings
 from django.utils.importlib import import_module
+
+def bencode(data):
+  if isinstance(data, int):
+    return "i%de" % data
+  if isinstance(data, str):
+    return "%d:%s" % (len(data), data)
+  if isinstance(data, list):
+    return "l%se" % ''.join(bencode(x) for x in data)
+  if isinstance(data, dict):
+    return "d%se" % ''.join('%s%s' % (bencode(x), bencode(data[x])) for x in sorted(data.keys()))  
+  raise TypeError
 
 def handle_events(values, user, peer):
   handler_function = 'handle_%s' % values['event']
