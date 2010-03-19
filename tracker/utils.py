@@ -136,10 +136,16 @@ def check_request_sanity(values):
   return None
 
 def peerset_to_ip(queryset, compact=1):
+  ip_port_list = []
+  for peer in queryset:
+    for userip in peer.user.userip_set.all():
+      ip_port_list.append((userip.ip, peer.port, peer.peer_id))
+  ip_port_list = set(ip_port_list)
+  
   if compact:
-    return ''.join("%s%s%s" % (ipaddr.IPAddress(peer.user_ip.ip).packed, chr(peer.port//256), chr(peer.port%256)) for peer in queryset)
+    return ''.join("%s%s%s" % (ipaddr.IPAddress(ip).packed, chr(port//256), chr(port%256)) for (ip, port, _) in ip_port_list)
   else:
-    return [{'peer id': peer.peer_id, 'ip': peer.user_ip.ip, 'port': peer.port} for peer in queryset]
+    return [{'peer id': peer_id, 'ip': ip, 'port': port} for (ip, port, peer_id) in ip_port_list]
 
 def find_matching_peer(info_hash, user, port, key):
   peer_query = Peer.objects.filter(info_hash=info_hash).filter(user=user).filter(port=port)
@@ -166,11 +172,15 @@ def generate_announce_response(values, peer):
   else:
     interval = settings.MAGIC_VALUES['peer_interval']
   
+  peerset = peerset_to_ip(peer_list[:values['numwant']], values['compact'])
+  import logging
+  logging.error(peerset)
+  
   return tracker_response({
     'interval': interval,
     'complete': num_seeds(values['info_hash']),
     'incomplete': num_peers(values['info_hash']),
-    'peers': peerset_to_ip(peer_list[:values['numwant']], values['compact']),
+    'peers': peerset,
   })
 
 def generate_scrape_response(hashes):

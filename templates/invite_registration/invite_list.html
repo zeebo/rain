@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+	<h2>Invites</h2>
+	<table cellpadding="3" cellspacing="0" border="0">
+		<thead>
+			<tr>
+				<th>Invite Code (give this link to other people)</th>
+				<th>Active</th>
+				<th>Child</th>
+				<th>Join Date</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for invite in object_list %}
+			<tr class="{% cycle 'row1' 'row2' %}">
+				<td>{% if invite.active %}<a href="{% url invite_registration.views.registration_view %}?code={{ invite.hash_code }}">{{ invite.hash_code }}</a>{% else %}{{ invite.hash_code }}{% endif %}</td>
+				<td>{{ invite.active }}</td>
+				<td>{% if invite.child %}{{ invite.child }}{% endif %}</td>
+				<td>{% if invite.join_date %}{{ invite.join_date }}{% endif %}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

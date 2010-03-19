@@ -1,5 +1,7 @@
 from rain.decorators import login_required
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 from django.utils.importlib import import_module
 from django.views.generic.list_detail import object_list, object_detail
 
@@ -25,7 +27,7 @@ def get_context(user):
     except (AttributeError, ImportError):
       pass
   
-  return profile
+  return profile_object
 
 @login_required
 def user_list(*args, **kwargs):
@@ -33,7 +35,8 @@ def user_list(*args, **kwargs):
 
 @login_required
 def user_profile(request, *args, **kwargs):
-  extra_context = {'profile': get_context(request.user)}
+  user = get_object_or_404(User, username=kwargs['slug'])
+  extra_context = {'profile': get_context(user)}
   return object_detail(request=request,
                        extra_context=extra_context,
                        template_name="user_profiles/user_detail.html",

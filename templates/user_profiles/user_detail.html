@@ -1,5 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-{{ object.username }} sucks
-{{ profile.tables }}
+<h1 style="text-align: center;">Info for {{object.username}}</h1>
+{% for table in profile.tables %}
+    <h2>{{ table.title }}</h2>
+	<table cellpadding="3" cellspacing="0" border="0">
+		<thead>
+			<tr>
+			    {% for heading in table.headers %}<th>{{ heading }}</th>
+			    {% endfor %}
+			</tr>
+		</thead>
+		<tbody>
+			{% for row in table.rows %}
+			<tr class="{% if forloop.counter|divisibleby:2 %}row2{% else %}row1{% endif %}">
+			    {% for field in row %}<td>{{ field }}</td>
+			    {% endfor %}
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	<br>
+{% endfor %}
 {% endblock %}

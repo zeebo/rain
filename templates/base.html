@@ -18,9 +18,10 @@ body {
 	<h1>Rain</h1>
 	<ul>
 		<li>Welcome, <strong><a href="{{ user.get_absolute_url }}">{{ user.username }}</a></strong></li>
-		<li><a href="{% url rain.torrents.views.torrent_list %}">Available Torrents</a></li>
-		<li><a href="/users/">Users</a></li>
-		<li><a href="{% url rain.torrents.views.upload_torrent %}">Upload Torrent</a></li>
+		<li><a href="{% url torrents.views.torrent_list %}">Available Torrents</a></li>
+		<li><a href="{% url user_profiles.views.user_list %}">Users</a></li>
+		<li><a href="{% url torrents.views.upload_torrent %}">Upload Torrent</a></li>
+		<li><a href="{% url invite_registration.views.invite_list %}">Invites {% if new_invites %}({{ new_invites }}){% endif %}</a></li>
 		<li><a href="{% url django.contrib.auth.views.logout %}">Logout</a></li>
 	</ul>
 </div>
