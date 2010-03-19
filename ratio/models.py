@@ -35,6 +35,7 @@ class RatioModel(models.Model):
 class RatioInfo(RatioModel):
   user = models.ForeignKey(User)
   info_hash = models.CharField(max_length=40)
+  last_updated = models.DateTimeField(auto_now=True)
 
 #Maps the total downloaded and uploaded to a user uniquely (updated automatically)
 class UserRatio(RatioModel):
