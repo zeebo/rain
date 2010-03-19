@@ -173,8 +173,6 @@ def generate_announce_response(values, peer):
     interval = settings.MAGIC_VALUES['peer_interval']
   
   peerset = peerset_to_ip(peer_list[:values['numwant']], values['compact'])
-  import logging
-  logging.error(peerset)
   
   return tracker_response({
     'interval': interval,
