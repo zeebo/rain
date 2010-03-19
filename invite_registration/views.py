@@ -4,6 +4,7 @@ from django.template import RequestContext
 from django.http import HttpResponseRedirect
 from models import Invite
 from forms import RegistrationForm
+import datetime
 
 def registration_view(request):
   hash_code = request.GET.get('code', None)
@@ -18,6 +19,7 @@ def registration_view(request):
       new_user = User.objects.create_user(form.data['username'], '', form.data['password'])
       invite.child = new_user
       invite.active = False
+      invite.join_date = datetime.datetime.now()
       
       invite.save()
       new_user.save()

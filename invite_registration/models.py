@@ -12,5 +12,7 @@ class Invite(models.Model):
   
   active = models.BooleanField(default=True)
   
+  join_date = models.DateTimeField(blank=True, null=True)
+  
   def used(self):
     return self.child is None
