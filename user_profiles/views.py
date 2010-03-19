@@ -1,40 +1,41 @@
 from rain.decorators import login_required
+from django.conf import settings
+from django.utils.importlib import import_module
 from django.views.generic.list_detail import object_list, object_detail
+
+class Table(object):
+  def __init__(self, table_dict):
+    self.title = table_dict.get('title', '')
+    self.headers = table_dict.get('headers', [])
+    self.rows = table_dict.get('rows', [])
 
 class Profile(object):
   def __init__(self, user):
-    self._user = user
-    self.table_headers = []
+    self.user = user
     self.tables = []
   
-  @property
-  def user(self):
-    return self._user
-  
   def add_table(self, table_dict):
-    self.table_headers.append(table_dict['header'])
-    self.tables.append(table_dict)
+    self.tables.append(Table(table_dict))
+
+def get_context(user):
+  profile_object = Profile(user)
+  for app in settings.INSTALLED_APPS:
+    try:
+      getattr(import_module("%s.user_profile" % app), 'add_profile')(profile_object)
+    except (AttributeError, ImportError):
+      pass
   
-  def yield_tables(self):
-    for i, table in enumerate(self.tables):
-      self._current_table = i
-      yield table
-  
-  def yield_headers(self):
-    return self.tables[self._current_table]['header']
-  
-  def yield_titles(self):
-    for title in self.tables[self._current_table]['titles']:
-      yield title
-  
-  def yield_rows(self):
-    for i, row in enumerate(self.tables[self._current_table]['values']):
-      yield row
-      
+  return profile
+
 @login_required
 def user_list(*args, **kwargs):
   return object_list(template_name="user_profiles/user_list.html", *args, **kwargs)
 
 @login_required
-def user_profile(*args, **kwargs):
-  return object_detail(template_name="user_profiles/user_detail.html", slug_field="username", *args, **kwargs)
+def user_profile(request, *args, **kwargs):
+  extra_context = {'profile': get_context(request.user)}
+  return object_detail(request=request,
+                       extra_context=extra_context,
+                       template_name="user_profiles/user_detail.html",
+                       slug_field="username",
+                       *args, **kwargs)
