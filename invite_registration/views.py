@@ -3,6 +3,7 @@ from django.views.generic.list_detail import object_list
 from django.contrib.auth.models import User
 from django.template import RequestContext
 from django.http import HttpResponseRedirect
+from django.conf import settings
 from rain.decorators import login_required
 from models import Invite
 from forms import RegistrationForm
@@ -31,7 +32,7 @@ def registration_view(request):
       invite.save()
       new_user.save()
       
-      return HttpResponseRedirect(new_user.get_absolute_url())
+      return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
       
   else:
     form = RegistrationForm()

@@ -10,9 +10,6 @@ class Torrent(models.Model):
   
   description = models.TextField()
   
-  def get_absolute_url(self):
-    return '/torrents/%d/' % self.pk
-  
   def __unicode__(self):
     return self.info_hash
   
@@ -24,7 +21,7 @@ class Torrent(models.Model):
     return return_data
   
   def set_info_hash(self):
-    from rain.torrents.utils import bencode, bdecode
+    from torrents.utils import bencode, bdecode
     data = bdecode(self.torrent_data())
     self.info_hash = hashlib.sha1(bencode(data['info'])).digest().encode('hex')
     

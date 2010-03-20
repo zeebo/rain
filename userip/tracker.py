@@ -1,4 +1,4 @@
-from rain.userip.models import UserIP
+from models import UserIP
 
 def authorize_user(request, queryset):
   try:

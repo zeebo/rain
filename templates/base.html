@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <title>lmao titles are for losers</title>
-<link rel="stylesheet" type="text/css" href="/media/main.css" />
+<link rel="stylesheet" type="text/css" href="{% url media 'main.css' %}" />
 <style type="text/css">
 {% if not user.is_authenticated %}
 body {
@@ -17,7 +17,7 @@ body {
 <div id="header">
 	<h1>Rain</h1>
 	<ul>
-		<li>Welcome, <strong><a href="{{ user.get_absolute_url }}">{{ user.username }}</a></strong></li>
+		<li>Welcome, <strong><a href="{% url user_profiles.views.user_profile user.username %}">{{ user.username }}</a></strong></li>
 		<li><a href="{% url torrents.views.torrent_list %}">Available Torrents</a></li>
 		<li><a href="{% url user_profiles.views.user_list %}">Users</a></li>
 		<li><a href="{% url torrents.views.upload_torrent %}">Upload Torrent</a></li>

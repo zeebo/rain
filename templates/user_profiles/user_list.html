@@ -11,7 +11,7 @@
 		<tbody>
 			{% for user in object_list %}
 			<tr class="{% cycle 'row1' 'row2' %}">
-				<td><a href="{{ user.get_absolute_url }}">{{ user.username }}</a></td>
+				<td><a href="{% url user_profiles.views.user_profile user.username %}">{{ user.username }}</a></td>
 				<td>{{ user.last_login }}</td>
 			</tr>
 			{% endfor %}

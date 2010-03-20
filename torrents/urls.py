@@ -7,8 +7,8 @@ info_dict = {
 }
 
 urlpatterns = patterns('',
-  (r'^$', 'rain.torrents.views.torrent_list', info_dict),
-  (r'^upload/$', 'rain.torrents.views.upload_torrent'),
-  (r'^(?P<object_id>\d+)/$', 'rain.torrents.views.torrent_detail', info_dict),
-  (r'^(?P<torrent_id>\d+)/download$', lambda x, torrent_id: HttpResponse('niy')),
+  (r'^$', 'torrents.views.torrent_list', info_dict),
+  (r'^upload/$', 'torrents.views.upload_torrent'),
+  (r'^(?P<object_id>\d+)/$', 'torrents.views.torrent_detail', info_dict),
+  url(r'^(?P<object_id>\d+)/download$', lambda x, object_id: HttpResponse('niy'), name='download_torrent'),
 )

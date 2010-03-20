@@ -13,7 +13,7 @@
 		<tbody>
 			{% for torrent in object_list %}
 			<tr class="{% cycle 'row1' 'row2' %}">
-				<td><a href="{{ torrent.get_absolute_url }}download">{{ torrent.info_hash }}</a></td>
+				<td><a href="{% url download_torrent torrent.pk %}">{{ torrent.info_hash }}</a></td>
 				<td>{{ torrent.description }}</td>
 				<td>{{ torrent.downloaded }}</td>
 				<td>{{ torrent.uploaded_by }}</td>

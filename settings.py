@@ -13,12 +13,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': os.path.join(CURRENT_PATH, 'database.db'),                      # Or path to database file if using sqlite3.
-    }
-}
+#Databases moved to private settings
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -78,6 +73,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.media",
     "django.contrib.messages.context_processors.messages",
     'rain.invite_registration.context.add_new_invites',
+    'rain.context.add_domain',
 )
 
 INSTALLED_APPS = (
@@ -107,4 +103,4 @@ MAGIC_VALUES = {
   'peer' : 'P',
 }
 
-LOGIN_REDIRECT_URL = '/torrents/'
+LOGIN_REDIRECT_URL = '/rain/torrents/'

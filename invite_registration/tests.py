@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.conf import settings
 from models import Invite
 
 class RegistrationTest(TestCase):
@@ -29,8 +30,6 @@ class RegistrationTest(TestCase):
       obj = User.objects.get(username='newuser')
     except User.DoesNotExist:
       raise self.failureException('User not created')
-    
-    self.assertRedirects(response, obj.get_absolute_url(), target_status_code=200)
     
     invite = Invite.objects.get(hash_code='ba130a1044f5691ff161df941db99fe796460438')
     

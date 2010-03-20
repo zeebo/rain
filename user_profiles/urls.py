@@ -6,6 +6,6 @@ info_dict = {
 }
 
 urlpatterns = patterns('',
-  (r'^$', 'rain.user_profiles.views.user_list', info_dict),
-  (r'^(?P<slug>.*)/$', 'rain.user_profiles.views.user_profile', info_dict),
+  (r'^$', 'user_profiles.views.user_list', info_dict),
+  (r'^(?P<slug>.*)/$', 'user_profiles.views.user_profile', info_dict),
 ) 

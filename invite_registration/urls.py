@@ -1,7 +1,8 @@
 from django.conf.urls.defaults import *
 from django.http import HttpResponse
+from django.conf import settings
 
 urlpatterns = patterns('',
   (r'^register$', 'invite_registration.views.registration_view'),
-  (r'^users/newuser/$', lambda x: HttpResponse() ), #hack to pass even if they dont have 404.html
+  (r'^%s$' % settings.LOGIN_REDIRECT_URL, lambda x: HttpResponse('lol')),
 )

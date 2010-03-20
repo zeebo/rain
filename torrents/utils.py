@@ -1,12 +1,3 @@
-from models import Torrent
-
-def get_matching_torrent(info_hash):
-  from rain.tracker.utils import tracker_error_response
-  try:
-    return Torrent.objects.filter(info_hash=info_hash).get(), None
-  except (Torrent.MultipleObjectsReturned, Torrent.DoesNotExist):
-    return None, tracker_error_response('Problem with info_hash')
-
 def bencode(data):
   if isinstance(data, int):
     return "i%de" % data

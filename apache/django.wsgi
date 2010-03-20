@@ -8,5 +8,12 @@ sys.path.append(workspace)
 sys.path.append(project)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'rain.settings'
+
 import django.core.handlers.wsgi
-application = django.core.handlers.wsgi.WSGIHandler()
+_application = django.core.handlers.wsgi.WSGIHandler()
+
+def application(environ, start_response):
+  #import logging
+  #logging.error(environ)
+  #environ['PATH_INFO'] = environ['SCRIPT_NAME'] + environ['PATH_INFO']
+  return _application(environ, start_response)
