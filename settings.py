@@ -73,7 +73,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.media",
     "django.contrib.messages.context_processors.messages",
     'rain.invite_registration.context.add_new_invites',
-    'rain.context.add_domain',
 )
 
 INSTALLED_APPS = (
