@@ -6,9 +6,9 @@ info_dict = {
   'queryset': Torrent.objects.all(),
 }
 
-urlpatterns = patterns('',
-  (r'^$', 'torrents.views.torrent_list', info_dict),
-  (r'^upload/$', 'torrents.views.upload_torrent'),
-  (r'^(?P<object_id>\d+)/$', 'torrents.views.torrent_detail', info_dict),
-  url(r'^(?P<object_id>\d+)/download$', lambda x, object_id: HttpResponse('niy'), name='download_torrent'),
+urlpatterns = patterns('torrents.views',
+  (r'^$', 'torrent_list', info_dict),
+  (r'^upload/$', 'upload_torrent'),
+  (r'^(?P<object_id>\d+)/$', 'torrent_detail', info_dict),
+  url(r'^(?P<object_id>\d+)/download$', 'download_torrent', name='download_torrent'),
 )

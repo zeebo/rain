@@ -6,12 +6,11 @@ body, th, td, input, textarea {
 	color:#3B4346;
 	font:12px/16px "Droid Sans", sans-serif;
 }
-
-ul.errorlist {
+ul.errorlist, ul.messages {
 	margin: 0;
 	padding: 0;
 }
-ul.errorlist li {
+ul.errorlist li, ul.messages li {
 	text-align: center;
 	list-style-type: none;
 	color: #f00;
