@@ -15,4 +15,5 @@ urlpatterns = patterns('',
   (r'^accounts/register/$', 'invite_registration.views.registration_view'),
   (r'^torrents/', include('torrents.urls')),
   url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}, name='media'), #probably security vuln but ok for now.
+  url(r'^amedia/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.AMEDIA_ROOT}, name='amedia'),
 )

@@ -36,6 +36,7 @@ USE_I18N = True
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
 ADMIN_MEDIA_PREFIX = '/amedia/'
+AMEDIA_ROOT = os.path.join(CURRENT_PATH, 'amedia/')
 
 CURRENT_DOMAIN = '192.168.1.73:8080' #zeeb.us.to
 MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media/')
@@ -102,4 +103,4 @@ MAGIC_VALUES = {
   'peer' : 'P',
 }
 
-LOGIN_REDIRECT_URL = '/rain/torrents/'
+LOGIN_REDIRECT_URL = '/torrents/'
